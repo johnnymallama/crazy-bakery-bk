@@ -1,0 +1,12 @@
+CREATE TABLE usuarios (
+    id VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NULL,
+    nombre VARCHAR(255) NULL,
+    apellido VARCHAR(255) NULL,
+    tipo VARCHAR(255) NULL,
+    telefono VARCHAR(255) NULL,
+    direccion VARCHAR(255) NULL,
+    departamento VARCHAR(255) NULL,
+    ciudad VARCHAR(255) NULL,
+    CONSTRAINT pk_usuarios PRIMARY KEY (id)
+);
