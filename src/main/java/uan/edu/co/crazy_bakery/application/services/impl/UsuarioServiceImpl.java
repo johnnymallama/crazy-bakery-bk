@@ -8,7 +8,9 @@ import uan.edu.co.crazy_bakery.domain.model.Usuario;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.UsuarioRepository;
 import uan.edu.co.crazy_bakery.application.services.UsuarioService;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
@@ -30,5 +32,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     public Optional<UsuarioDTO> getUsuario(String id) {
         return usuarioRepository.findById(id)
                 .map(UsuarioMapper.INSTANCE::usuarioToUsuarioDTO);
+    }
+
+    @Override
+    public List<UsuarioDTO> getAllUsuarios() {
+        return usuarioRepository.findAll()
+                .stream()
+                .map(UsuarioMapper.INSTANCE::usuarioToUsuarioDTO)
+                .collect(Collectors.toList());
     }
 }

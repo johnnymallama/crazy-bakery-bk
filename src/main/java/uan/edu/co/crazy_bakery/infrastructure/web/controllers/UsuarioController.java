@@ -7,6 +7,8 @@ import uan.edu.co.crazy_bakery.application.dto.requests.CrearUsuarioDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.UsuarioDTO;
 import uan.edu.co.crazy_bakery.application.services.UsuarioService;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/usuarios")
 public class UsuarioController {
@@ -21,6 +23,12 @@ public class UsuarioController {
     public ResponseEntity<UsuarioDTO> crearUsuario(@RequestBody CrearUsuarioDTO crearUsuarioDTO) {
         UsuarioDTO nuevoUsuario = usuarioService.crearUsuario(crearUsuarioDTO);
         return new ResponseEntity<>(nuevoUsuario, HttpStatus.CREATED);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<UsuarioDTO>> getAllUsuarios() {
+        List<UsuarioDTO> usuarios = usuarioService.getAllUsuarios();
+        return new ResponseEntity<>(usuarios, HttpStatus.OK);
     }
 
     @GetMapping("/{id}")

@@ -1,4 +1,4 @@
-CREATE TABLE usuarios (
+CREATE TABLE usuario (
     id VARCHAR(255) NOT NULL,
     email VARCHAR(255) NULL,
     nombre VARCHAR(255) NULL,
@@ -8,5 +8,5 @@ CREATE TABLE usuarios (
     direccion VARCHAR(255) NULL,
     departamento VARCHAR(255) NULL,
     ciudad VARCHAR(255) NULL,
-    CONSTRAINT pk_usuarios PRIMARY KEY (id)
+    CONSTRAINT pk_usuario PRIMARY KEY (id)
 );
