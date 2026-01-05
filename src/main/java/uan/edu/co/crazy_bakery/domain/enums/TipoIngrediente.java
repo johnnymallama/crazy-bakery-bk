@@ -9,10 +9,8 @@ import java.util.stream.Stream;
 public enum TipoIngrediente {
 
     MASA("01", "Masa"),
-    RELLENO("02", "Azúcar"),
-    COBERTURA("03", "Huevos"),
-    LECHE("04", "Leche"),
-    MANTEQUILLA("05", "Mantequilla");
+    RELLENO("02", "Relleno"),
+    COBERTURA("03", "Cobertura");
 
     private final String codigo;
     private final String nombre;
