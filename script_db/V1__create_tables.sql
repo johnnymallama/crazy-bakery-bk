@@ -12,7 +12,7 @@ CREATE TABLE usuario (
 );
 
 CREATE TABLE ingrediente (
-    codigo VARCHAR(255) NOT NULL,
+    codigo BIGINT AUTO_INCREMENT NOT NULL,
     nombre VARCHAR(255) NULL,
     composicion VARCHAR(255) NULL,
     tipo_ingrediente VARCHAR(255) NULL,

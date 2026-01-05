@@ -1,12 +1,11 @@
 package uan.edu.co.crazy_bakery.infrastructure.web.controllers;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
 import uan.edu.co.crazy_bakery.application.services.IngredienteService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/ingredientes")
@@ -19,19 +18,16 @@ public class IngredienteController {
     }
 
     @PostMapping
-    public IngredienteDTO createIngrediente(@RequestBody CrearIngredienteDTO crearIngredienteDTO) {
-        return ingredienteService.createIngrediente(crearIngredienteDTO);
+    public ResponseEntity<IngredienteDTO> createIngrediente(@RequestBody CrearIngredienteDTO crearIngredienteDTO) {
+        IngredienteDTO createdIngrediente = ingredienteService.createIngrediente(crearIngredienteDTO);
+        return new ResponseEntity<>(createdIngrediente, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<IngredienteDTO> getIngrediente(@PathVariable String id) {
+    public ResponseEntity<IngredienteDTO> getIngrediente(@PathVariable Long id) {
         return ingredienteService.getIngrediente(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping
-    public List<IngredienteDTO> getAllIngredientes() {
-        return ingredienteService.getAllIngredientes();
-    }
 }

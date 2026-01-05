@@ -1,11 +1,6 @@
 package uan.edu.co.crazy_bakery.domain.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 
@@ -15,8 +10,8 @@ import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 public class Ingrediente {
 
     @Id
-    @Column(name = "codigo")
-    private String codigo;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long codigo;
 
     @Column(name = "nombre")
     private String nombre;
