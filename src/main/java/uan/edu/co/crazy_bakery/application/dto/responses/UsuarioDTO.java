@@ -14,4 +14,5 @@ public class UsuarioDTO {
     private String direccion;
     private String departamento;
     private String ciudad;
+    private boolean estado;
 }

@@ -72,3 +72,4 @@ Una vez que la nueva imagen está en Artifact Registry, puedes crear o actualiza
 | `DB_NAME` | `crazy-bakery` |
 | `INSTANCE_CONNECTION_NAME` | `uan-especializacion:us-central1:uan-especializacion` |
 ## Prueba 
+mvn compile jib:build
