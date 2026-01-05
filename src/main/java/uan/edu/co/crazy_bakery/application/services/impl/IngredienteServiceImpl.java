@@ -1,43 +1,44 @@
 package uan.edu.co.crazy_bakery.application.services.impl;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
-i
-
-import uan.edu.co.crazy_bakery.application.services.IngredienteService;
+import uan.edu.co.crazy_bakery.application.mappers.IngredienteMapper;
+import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.IngredienteRepository;
+import uan.edu.co.crazy_bakery.application.services.IngredienteService;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
-public class IngredienteServiceImpl implements IngredienteService{
+public class IngredienteServiceImpl implements IngredienteService {
 
-    private final IngredienteRepository in
+    private final IngredienteRepository ingredienteRepository;
 
-    @Override
-    public List<IngredienteDTO> getAllIngredientes() {
-        return null;
-    }
-
-    @Override
-    public IngredienteDTO getIngredienteById(String id) {
-        return null;
+    public IngredienteServiceImpl(IngredienteRepository ingredienteRepository) {
+        this.ingredienteRepository = ingredienteRepository;
     }
 
     @Override
     public IngredienteDTO createIngrediente(CrearIngredienteDTO crearIngredienteDTO) {
-        return null;
+        Ingrediente ingrediente = IngredienteMapper.INSTANCE.creaIngredienteDTOToIngrediente(crearIngredienteDTO);
+        ingrediente = ingredienteRepository.save(ingrediente);
+        return IngredienteMapper.INSTANCE.ingredienteToIngredienteDTO(ingrediente);
     }
 
     @Override
-    public IngredienteDTO updateIngrediente(String id, CrearIngredienteDTO crearIngredienteDTO) {
-        return null;   
+    public Optional<IngredienteDTO> getIngrediente(String id) {
+        return ingredienteRepository.findById(id)
+                .map(IngredienteMapper.INSTANCE::ingredienteToIngredienteDTO);
     }
 
     @Override
-    public void deleteIngrediente(String id) {
-
+    public List<IngredienteDTO> getAllIngredientes() {
+        return ingredienteRepository.findAll()
+                .stream()
+                .map(IngredienteMapper.INSTANCE::ingredienteToIngredienteDTO)
+                .collect(Collectors.toList());
     }
-
 }

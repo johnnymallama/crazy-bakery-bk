@@ -5,7 +5,7 @@ import org.mapstruct.factory.Mappers;
 
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
-import uan.edu.co.crazy_bakery.domain.model.Ingredientes.Ingrediente;
+import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
 
 @Mapper
 public interface IngredienteMapper {
