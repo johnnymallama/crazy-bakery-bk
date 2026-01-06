@@ -1,5 +1,6 @@
 package uan.edu.co.crazy_bakery.application.dto.responses;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,9 @@ public class TamanoDTO {
     private int alto;
     private int diametro;
     private int porciones;
+
+    @JsonProperty("tipo_receta")
     private TipoReceta tipoReceta;
+
     private boolean estado;
 }
