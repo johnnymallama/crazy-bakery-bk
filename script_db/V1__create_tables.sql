@@ -11,6 +11,8 @@ CREATE TABLE usuario (
     CONSTRAINT pk_usuario PRIMARY KEY (id)
 );
 
+ALTER TABLE usuario ADD COLUMN estado BOOLEAN;
+
 CREATE TABLE ingrediente (
     codigo BIGINT AUTO_INCREMENT NOT NULL,
     nombre VARCHAR(255) NULL,
