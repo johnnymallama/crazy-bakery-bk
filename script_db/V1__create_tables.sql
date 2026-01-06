@@ -21,3 +21,14 @@ CREATE TABLE ingrediente (
     valor FLOAT NULL,
     CONSTRAINT pk_ingrediente PRIMARY KEY (codigo)
 );
+
+CREATE TABLE tamano (
+    id BIGINT AUTO_INCREMENT NOT NULL,
+    nombre VARCHAR(255) NOT NULL,
+    alto INT NOT NULL,
+    diametro INT NOT NULL,
+    porciones INT NOT NULL,
+    tipo_receta VARCHAR(255) NOT NULL,
+    estado BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT pk_tamano PRIMARY KEY (id)
+);
