@@ -40,27 +40,27 @@ class IngredienteServiceTest {
         crearIngredienteDTO = new CrearIngredienteDTO();
         crearIngredienteDTO.setNombre("Levadura");
         crearIngredienteDTO.setComposicion("Hongos");
-        crearIngredienteDTO.setTipoIngrediente(TipoIngrediente.MASA);
+        crearIngredienteDTO.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
         crearIngredienteDTO.setValor(500);
 
         ingredienteSinGuardar = new Ingrediente();
         ingredienteSinGuardar.setNombre("Levadura");
         ingredienteSinGuardar.setComposicion("Hongos");
-        ingredienteSinGuardar.setTipoIngrediente(TipoIngrediente.MASA);
+        ingredienteSinGuardar.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
         ingredienteSinGuardar.setValor(500);
 
         ingredienteGuardado = new Ingrediente();
-        ingredienteGuardado.setCodigo(1L);
+        ingredienteGuardado.setId(1L);
         ingredienteGuardado.setNombre("Levadura");
         ingredienteGuardado.setComposicion("Hongos");
-        ingredienteGuardado.setTipoIngrediente(TipoIngrediente.MASA);
+        ingredienteGuardado.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
         ingredienteGuardado.setValor(500);
 
         ingredienteDTO = new IngredienteDTO();
-        ingredienteDTO.setCodigo(1L);
+        ingredienteDTO.setId(1L);
         ingredienteDTO.setNombre("Levadura");
         ingredienteDTO.setComposicion("Hongos");
-        ingredienteDTO.setTipoIngrediente(TipoIngrediente.MASA);
+        ingredienteDTO.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
         ingredienteDTO.setValor(500);
     }
 
@@ -76,7 +76,7 @@ class IngredienteServiceTest {
 
         // Assert
         assertThat(result).isNotNull();
-        assertThat(result.getCodigo()).isEqualTo(1L);
+        assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getNombre()).isEqualTo("Levadura");
     }
 }

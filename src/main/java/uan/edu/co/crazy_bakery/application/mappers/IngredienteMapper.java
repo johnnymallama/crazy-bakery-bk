@@ -14,6 +14,6 @@ public interface IngredienteMapper {
 
     IngredienteDTO ingredienteToIngredienteDTO(Ingrediente ingrediente);
 
-    @Mapping(target = "codigo", ignore = true)
+    @Mapping(target = "id", ignore = true)
     Ingrediente crearIngredienteDTOToIngrediente(CrearIngredienteDTO crearIngredienteDTO);
 }

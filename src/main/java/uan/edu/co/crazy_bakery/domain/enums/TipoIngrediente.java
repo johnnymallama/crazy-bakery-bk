@@ -1,10 +1,9 @@
 package uan.edu.co.crazy_bakery.domain.enums;
 
 public enum TipoIngrediente {
-    MASA("MAS"),
+    BIZCOCHO("BIZ"),
     COBERTURA("COB"),
-    RELLENO("REL"),
-    DECORACION("DEC");
+    RELLENO("REL");
 
     private final String prefijo;
 

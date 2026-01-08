@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
@@ -40,16 +39,16 @@ class IngredienteControllerTest {
     @BeforeEach
     void setUp() {
         ingredienteDTO = new IngredienteDTO();
-        ingredienteDTO.setCodigo(1L);
+        ingredienteDTO.setId(1L);
         ingredienteDTO.setNombre("Harina de Trigo");
         ingredienteDTO.setComposicion("Trigo");
-        ingredienteDTO.setTipoIngrediente(TipoIngrediente.MASA);
+        ingredienteDTO.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
         ingredienteDTO.setValor(2500);
 
         crearIngredienteDTO = new CrearIngredienteDTO();
         crearIngredienteDTO.setNombre("Harina de Trigo");
         crearIngredienteDTO.setComposicion("Trigo");
-        crearIngredienteDTO.setTipoIngrediente(TipoIngrediente.MASA);
+        crearIngredienteDTO.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
         crearIngredienteDTO.setValor(2500);
     }
 
@@ -61,7 +60,7 @@ class IngredienteControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(crearIngredienteDTO)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.codigo").value(1L))
+                .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.nombre").value("Harina de Trigo"));
     }
 
@@ -71,7 +70,7 @@ class IngredienteControllerTest {
 
         mockMvc.perform(get("/ingredientes/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.codigo").value(1L))
+                .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.nombre").value("Harina de Trigo"));
     }
 

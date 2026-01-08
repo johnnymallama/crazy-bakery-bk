@@ -14,12 +14,12 @@ CREATE TABLE usuario (
 ALTER TABLE usuario ADD COLUMN estado BOOLEAN;
 
 CREATE TABLE ingrediente (
-    codigo BIGINT AUTO_INCREMENT NOT NULL,
+    id BIGINT AUTO_INCREMENT NOT NULL,
     nombre VARCHAR(255) NULL,
     composicion VARCHAR(255) NULL,
     tipo_ingrediente VARCHAR(255) NULL,
     valor FLOAT NULL,
-    CONSTRAINT pk_ingrediente PRIMARY KEY (codigo)
+    CONSTRAINT pk_ingrediente PRIMARY KEY (id)
 );
 
 CREATE TABLE tamano (
@@ -31,4 +31,14 @@ CREATE TABLE tamano (
     tipo_receta VARCHAR(255) NOT NULL,
     estado BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT pk_tamano PRIMARY KEY (id)
+);
+
+CREATE TABLE tamano_tipo_ingrediente (
+    id BIGINT AUTO_INCREMENT NOT NULL,
+    tamano_id BIGINT NOT NULL,
+    tipo_ingrediente VARCHAR(255) NOT NULL,
+    gramos FLOAT NOT NULL,
+    estado BOOLEAN NOT NULL DEFAULT TRUE,
+    CONSTRAINT pk_tamano_tipo_ingrediente PRIMARY KEY (id),
+    CONSTRAINT fk_tamano FOREIGN KEY (tamano_id) REFERENCES tamano (id)
 );

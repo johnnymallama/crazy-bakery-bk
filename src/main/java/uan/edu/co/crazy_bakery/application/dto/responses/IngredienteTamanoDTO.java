@@ -4,10 +4,10 @@ import lombok.Data;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 
 @Data
-public class IngredienteDTO {
+public class IngredienteTamanoDTO {
     private Long id;
-    private String nombre;
-    private String composicion;
+    private Long tamanoId;
+    private String tamanoNombre;
     private TipoIngrediente tipoIngrediente;
-    private float valor;
+    private float gramos;
 }
