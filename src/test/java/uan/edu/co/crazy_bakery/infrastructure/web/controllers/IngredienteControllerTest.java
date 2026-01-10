@@ -6,17 +6,20 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
 import uan.edu.co.crazy_bakery.application.services.IngredienteService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
+import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
 
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -33,17 +36,27 @@ class IngredienteControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    private Ingrediente ingrediente;
     private IngredienteDTO ingredienteDTO;
     private CrearIngredienteDTO crearIngredienteDTO;
 
     @BeforeEach
     void setUp() {
+        ingrediente = new Ingrediente();
+        ingrediente.setId(1L);
+        ingrediente.setNombre("Harina de Trigo");
+        ingrediente.setComposicion("Trigo");
+        ingrediente.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
+        ingrediente.setValor(2500);
+        ingrediente.setEstado(true);
+
         ingredienteDTO = new IngredienteDTO();
         ingredienteDTO.setId(1L);
         ingredienteDTO.setNombre("Harina de Trigo");
         ingredienteDTO.setComposicion("Trigo");
         ingredienteDTO.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
         ingredienteDTO.setValor(2500);
+        ingredienteDTO.setEstado(true);
 
         crearIngredienteDTO = new CrearIngredienteDTO();
         crearIngredienteDTO.setNombre("Harina de Trigo");
@@ -65,8 +78,8 @@ class IngredienteControllerTest {
     }
 
     @Test
-    void getIngrediente_Found() throws Exception {
-        when(ingredienteService.getIngrediente(1L)).thenReturn(Optional.of(ingredienteDTO));
+    void getIngrediente_FoundAndActive() throws Exception {
+        when(ingredienteService.getIngrediente(1L)).thenReturn(Optional.of(ingrediente));
 
         mockMvc.perform(get("/ingredientes/1"))
                 .andExpect(status().isOk())
@@ -75,10 +88,68 @@ class IngredienteControllerTest {
     }
 
     @Test
+    void getIngrediente_FoundAndInactive() throws Exception {
+        ingrediente.setEstado(false);
+        when(ingredienteService.getIngrediente(1L)).thenReturn(Optional.of(ingrediente));
+
+        mockMvc.perform(get("/ingredientes/1"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
     void getIngrediente_NotFound() throws Exception {
         when(ingredienteService.getIngrediente(1L)).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/ingredientes/1"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getAllIngredientes_Success() throws Exception {
+        when(ingredienteService.getAllIngredientes()).thenReturn(Collections.singletonList(ingredienteDTO));
+
+        mockMvc.perform(get("/ingredientes"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].nombre").value("Harina de Trigo"));
+    }
+
+    @Test
+    void updateIngrediente_Success() throws Exception {
+        when(ingredienteService.updateIngrediente(anyLong(), any(CrearIngredienteDTO.class))).thenReturn(Optional.of(ingredienteDTO));
+
+        mockMvc.perform(put("/ingredientes/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(crearIngredienteDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Harina de Trigo"));
+    }
+
+    @Test
+    void updateIngrediente_NotFound() throws Exception {
+        when(ingredienteService.updateIngrediente(anyLong(), any(CrearIngredienteDTO.class))).thenReturn(Optional.empty());
+
+        mockMvc.perform(put("/ingredientes/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(crearIngredienteDTO)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deactivateIngrediente_Success() throws Exception {
+        ingredienteDTO.setEstado(false);
+        when(ingredienteService.deactivateIngrediente(1L)).thenReturn(Optional.of(ingredienteDTO));
+
+        mockMvc.perform(delete("/ingredientes/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value(false));
+    }
+
+    @Test
+    void deactivateIngrediente_NotFound() throws Exception {
+        when(ingredienteService.deactivateIngrediente(1L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(delete("/ingredientes/1"))
                 .andExpect(status().isNotFound());
     }
 }

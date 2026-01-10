@@ -25,4 +25,7 @@ public class Ingrediente {
 
     @Column(name = "valor")
     private float valor;
+
+    @Column(name = "estado")
+    private boolean estado = true;
 }

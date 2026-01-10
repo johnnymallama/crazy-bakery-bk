@@ -8,7 +8,9 @@ import uan.edu.co.crazy_bakery.application.services.IngredienteService;
 import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.IngredienteRepository;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class IngredienteServiceImpl implements IngredienteService {
@@ -24,13 +26,44 @@ public class IngredienteServiceImpl implements IngredienteService {
     @Override
     public IngredienteDTO createIngrediente(CrearIngredienteDTO crearIngredienteDTO) {
         Ingrediente ingrediente = ingredienteMapper.crearIngredienteDTOToIngrediente(crearIngredienteDTO);
+        ingrediente.setEstado(true);
         ingrediente = ingredienteRepository.save(ingrediente);
         return ingredienteMapper.ingredienteToIngredienteDTO(ingrediente);
     }
 
     @Override
-    public Optional<IngredienteDTO> getIngrediente(Long id) {
+    public Optional<Ingrediente> getIngrediente(Long id) {
+        return ingredienteRepository.findById(id);
+    }
+
+    @Override
+    public List<IngredienteDTO> getAllIngredientes() {
+        return ingredienteRepository.findAllByEstado(true)
+                .stream()
+                .map(ingredienteMapper::ingredienteToIngredienteDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<IngredienteDTO> updateIngrediente(Long id, CrearIngredienteDTO crearIngredienteDTO) {
         return ingredienteRepository.findById(id)
-                .map(ingredienteMapper::ingredienteToIngredienteDTO);
+                .map(ingrediente -> {
+                    ingrediente.setNombre(crearIngredienteDTO.getNombre());
+                    ingrediente.setComposicion(crearIngredienteDTO.getComposicion());
+                    ingrediente.setTipoIngrediente(crearIngredienteDTO.getTipoIngrediente());
+                    ingrediente.setValor(crearIngredienteDTO.getValor());
+                    ingredienteRepository.save(ingrediente);
+                    return ingredienteMapper.ingredienteToIngredienteDTO(ingrediente);
+                });
+    }
+
+    @Override
+    public Optional<IngredienteDTO> deactivateIngrediente(Long id) {
+        return ingredienteRepository.findById(id)
+                .map(ingrediente -> {
+                    ingrediente.setEstado(false);
+                    ingredienteRepository.save(ingrediente);
+                    return ingredienteMapper.ingredienteToIngredienteDTO(ingrediente);
+                });
     }
 }

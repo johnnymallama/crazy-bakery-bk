@@ -22,6 +22,8 @@ CREATE TABLE ingrediente (
     CONSTRAINT pk_ingrediente PRIMARY KEY (id)
 );
 
+ALTER TABLE ingrediente ADD COLUMN estado BOOLEAN;
+
 CREATE TABLE tamano (
     id BIGINT AUTO_INCREMENT NOT NULL,
     nombre VARCHAR(255) NOT NULL,

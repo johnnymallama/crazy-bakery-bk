@@ -10,4 +10,5 @@ public class IngredienteDTO {
     private String composicion;
     private TipoIngrediente tipoIngrediente;
     private float valor;
+    private boolean estado;
 }
