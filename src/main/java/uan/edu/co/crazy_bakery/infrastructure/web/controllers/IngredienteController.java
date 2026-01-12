@@ -8,17 +8,21 @@ import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
 import uan.edu.co.crazy_bakery.application.mappers.IngredienteMapper;
 import uan.edu.co.crazy_bakery.application.services.IngredienteService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
+import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/ingredientes")
 public class IngredienteController {
 
     private final IngredienteService ingredienteService;
+    private final IngredienteMapper ingredienteMapper;
 
-    public IngredienteController(IngredienteService ingredienteService) {
+    public IngredienteController(IngredienteService ingredienteService, IngredienteMapper ingredienteMapper) {
         this.ingredienteService = ingredienteService;
+        this.ingredienteMapper = ingredienteMapper;
     }
 
     @PostMapping
@@ -29,16 +33,20 @@ public class IngredienteController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getIngrediente(@PathVariable Long id) {
-        return ingredienteService.getIngrediente(id)
-                .map(ingrediente -> {
-                    if (ingrediente.isEstado()) {
-                        IngredienteDTO dto = IngredienteMapper.INSTANCE.ingredienteToIngredienteDTO(ingrediente);
-                        return ResponseEntity.ok(dto);
-                    } else {
-                        return ResponseEntity.noContent().build();
-                    }
-                })
-                .orElse(ResponseEntity.notFound().build());
+        Optional<Ingrediente> ingredienteOpt = ingredienteService.getIngrediente(id);
+        if (ingredienteOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Ingrediente ingrediente = ingredienteOpt.get();
+        // If estado is null or false, it's considered inactive.
+        if (ingrediente.getEstado() == null || !ingrediente.getEstado()) {
+            return ResponseEntity.noContent().build();
+        }
+
+        // It's active, so map to DTO and return.
+        IngredienteDTO dto = ingredienteMapper.ingredienteToIngredienteDTO(ingrediente);
+        return ResponseEntity.ok(dto);
     }
 
     @GetMapping

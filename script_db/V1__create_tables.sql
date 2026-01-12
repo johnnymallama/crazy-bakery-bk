@@ -44,3 +44,34 @@ CREATE TABLE tamano_tipo_ingrediente (
     CONSTRAINT pk_tamano_tipo_ingrediente PRIMARY KEY (id),
     CONSTRAINT fk_tamano FOREIGN KEY (tamano_id) REFERENCES tamano (id)
 );
+
+-- Script para crear la tabla 'torta'
+-- Este script es para PostgreSQL. Para otros SGBD, puede que necesites
+-- cambiar el tipo de dato SERIAL por AUTO_INCREMENT (MySQL) o similar.
+
+CREATE TABLE torta (
+    id SERIAL PRIMARY KEY,                          -- Identificador único autoincremental
+    bizcocho_id BIGINT NOT NULL,                      -- Llave foránea para el ingrediente del bizcocho
+    relleno_id BIGINT NOT NULL,                       -- Llave foránea para el ingrediente del relleno
+    cubertura_id BIGINT NOT NULL,                     -- Llave foránea para el ingrediente de la cubertura
+    tamano_id BIGINT NOT NULL,                        -- Llave foránea para el tamaño de la porción
+    valor REAL NOT NULL,                              -- El precio final calculado de la torta (REAL o FLOAT)
+    estado BOOLEAN NOT NULL,                          -- Estado lógico de la torta (ej: activa/inactiva)
+
+    CONSTRAINT fk_torta_bizcocho
+        FOREIGN KEY (bizcocho_id)
+        REFERENCES ingrediente(id),
+
+    CONSTRAINT fk_torta_relleno
+        FOREIGN KEY (relleno_id)
+        REFERENCES ingrediente(id),
+
+    CONSTRAINT fk_torta_cubertura
+        FOREIGN KEY (cubertura_id)
+        REFERENCES ingrediente(id),
+
+    CONSTRAINT fk_torta_tamano
+        FOREIGN KEY (tamano_id)
+        REFERENCES tamano(id)
+);
+
