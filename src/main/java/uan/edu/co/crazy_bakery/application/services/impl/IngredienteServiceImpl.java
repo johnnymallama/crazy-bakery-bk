@@ -5,6 +5,7 @@ import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
 import uan.edu.co.crazy_bakery.application.mappers.IngredienteMapper;
 import uan.edu.co.crazy_bakery.application.services.IngredienteService;
+import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.IngredienteRepository;
 
@@ -65,5 +66,13 @@ public class IngredienteServiceImpl implements IngredienteService {
                     ingredienteRepository.save(ingrediente);
                     return ingredienteMapper.ingredienteToIngredienteDTO(ingrediente);
                 });
+    }
+
+    @Override
+    public List<IngredienteDTO> findByTipoIngrediente(TipoIngrediente tipoIngrediente) {
+        return ingredienteRepository.findByTipoIngrediente(tipoIngrediente)
+                .stream()
+                .map(ingredienteMapper::ingredienteToIngredienteDTO)
+                .collect(Collectors.toList());
     }
 }

@@ -7,6 +7,7 @@ import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
 import uan.edu.co.crazy_bakery.application.mappers.IngredienteMapper;
 import uan.edu.co.crazy_bakery.application.services.IngredienteService;
+import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 
 import java.util.List;
 
@@ -58,5 +59,11 @@ public class IngredienteController {
         return ingredienteService.deactivateIngrediente(id)
                 .map(ingrediente -> new ResponseEntity<>(ingrediente, HttpStatus.OK))
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @GetMapping("/tipo/{tipoIngrediente}")
+    public ResponseEntity<List<IngredienteDTO>> findByTipoIngrediente(@PathVariable TipoIngrediente tipoIngrediente) {
+        List<IngredienteDTO> ingredientes = ingredienteService.findByTipoIngrediente(tipoIngrediente);
+        return new ResponseEntity<>(ingredientes, HttpStatus.OK);
     }
 }
