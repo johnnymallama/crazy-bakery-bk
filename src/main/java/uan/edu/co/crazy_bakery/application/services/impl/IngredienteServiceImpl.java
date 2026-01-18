@@ -3,7 +3,6 @@ package uan.edu.co.crazy_bakery.application.services.impl;
 import org.springframework.stereotype.Service;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
-import uan.edu.co.crazy_bakery.application.mappers.IngredienteMapper;
 import uan.edu.co.crazy_bakery.application.services.IngredienteService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
@@ -17,31 +16,49 @@ import java.util.stream.Collectors;
 public class IngredienteServiceImpl implements IngredienteService {
 
     private final IngredienteRepository ingredienteRepository;
-    private final IngredienteMapper ingredienteMapper;
 
-    public IngredienteServiceImpl(IngredienteRepository ingredienteRepository, IngredienteMapper ingredienteMapper) {
+    public IngredienteServiceImpl(IngredienteRepository ingredienteRepository) {
         this.ingredienteRepository = ingredienteRepository;
-        this.ingredienteMapper = ingredienteMapper;
+    }
+
+    private IngredienteDTO toDTO(Ingrediente ingrediente) {
+        IngredienteDTO dto = new IngredienteDTO();
+        dto.setId(ingrediente.getId());
+        dto.setNombre(ingrediente.getNombre());
+        dto.setComposicion(ingrediente.getComposicion());
+        dto.setTipoIngrediente(ingrediente.getTipoIngrediente());
+        dto.setValor(ingrediente.getValor());
+        dto.setEstado(ingrediente.getEstado());
+        return dto;
+    }
+
+    private Ingrediente toEntity(CrearIngredienteDTO crearIngredienteDTO) {
+        Ingrediente ingrediente = new Ingrediente();
+        ingrediente.setNombre(crearIngredienteDTO.getNombre());
+        ingrediente.setComposicion(crearIngredienteDTO.getComposicion());
+        ingrediente.setTipoIngrediente(crearIngredienteDTO.getTipoIngrediente());
+        ingrediente.setValor(crearIngredienteDTO.getValor());
+        return ingrediente;
     }
 
     @Override
     public IngredienteDTO createIngrediente(CrearIngredienteDTO crearIngredienteDTO) {
-        Ingrediente ingrediente = ingredienteMapper.crearIngredienteDTOToIngrediente(crearIngredienteDTO);
+        Ingrediente ingrediente = toEntity(crearIngredienteDTO);
         ingrediente.setEstado(true);
         ingrediente = ingredienteRepository.save(ingrediente);
-        return ingredienteMapper.ingredienteToIngredienteDTO(ingrediente);
+        return toDTO(ingrediente);
     }
 
     @Override
-    public Optional<Ingrediente> getIngrediente(Long id) {
-        return ingredienteRepository.findById(id);
+    public Optional<IngredienteDTO> getIngrediente(Long id) {
+        return ingredienteRepository.findById(id).map(this::toDTO);
     }
 
     @Override
     public List<IngredienteDTO> getAllIngredientes() {
-        return ingredienteRepository.findAllByEstado(true)
+        return ingredienteRepository.findAll()
                 .stream()
-                .map(ingredienteMapper::ingredienteToIngredienteDTO)
+                .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
@@ -54,7 +71,7 @@ public class IngredienteServiceImpl implements IngredienteService {
                     ingrediente.setTipoIngrediente(crearIngredienteDTO.getTipoIngrediente());
                     ingrediente.setValor(crearIngredienteDTO.getValor());
                     ingredienteRepository.save(ingrediente);
-                    return ingredienteMapper.ingredienteToIngredienteDTO(ingrediente);
+                    return toDTO(ingrediente);
                 });
     }
 
@@ -64,7 +81,7 @@ public class IngredienteServiceImpl implements IngredienteService {
                 .map(ingrediente -> {
                     ingrediente.setEstado(false);
                     ingredienteRepository.save(ingrediente);
-                    return ingredienteMapper.ingredienteToIngredienteDTO(ingrediente);
+                    return toDTO(ingrediente);
                 });
     }
 
@@ -72,7 +89,7 @@ public class IngredienteServiceImpl implements IngredienteService {
     public List<IngredienteDTO> findByTipoIngrediente(TipoIngrediente tipoIngrediente) {
         return ingredienteRepository.findByTipoIngrediente(tipoIngrediente)
                 .stream()
-                .map(ingredienteMapper::ingredienteToIngredienteDTO)
+                .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 }

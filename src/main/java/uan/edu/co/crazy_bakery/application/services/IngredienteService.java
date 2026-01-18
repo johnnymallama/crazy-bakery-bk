@@ -9,10 +9,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IngredienteService {
-
     IngredienteDTO createIngrediente(CrearIngredienteDTO crearIngredienteDTO);
 
-    Optional<Ingrediente> getIngrediente(Long id);
+    Optional<IngredienteDTO> getIngrediente(Long id);
 
     List<IngredienteDTO> getAllIngredientes();
 
@@ -21,5 +20,4 @@ public interface IngredienteService {
     Optional<IngredienteDTO> deactivateIngrediente(Long id);
 
     List<IngredienteDTO> findByTipoIngrediente(TipoIngrediente tipoIngrediente);
-
 }
