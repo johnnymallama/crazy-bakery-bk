@@ -11,10 +11,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
-import uan.edu.co.crazy_bakery.application.mappers.IngredienteMapper;
 import uan.edu.co.crazy_bakery.application.services.IngredienteService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
-import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -34,26 +32,14 @@ class IngredienteControllerTest {
     @MockBean
     private IngredienteService ingredienteService;
 
-    @MockBean
-    private IngredienteMapper ingredienteMapper; // Mock faltante añadido
-
     @Autowired
     private ObjectMapper objectMapper;
 
-    private Ingrediente ingrediente;
     private IngredienteDTO ingredienteDTO;
     private CrearIngredienteDTO crearIngredienteDTO;
 
     @BeforeEach
     void setUp() {
-        ingrediente = new Ingrediente();
-        ingrediente.setId(1L);
-        ingrediente.setNombre("Harina de Trigo");
-        ingrediente.setComposicion("Trigo");
-        ingrediente.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
-        ingrediente.setValor(2500);
-        ingrediente.setEstado(true);
-
         ingredienteDTO = new IngredienteDTO();
         ingredienteDTO.setId(1L);
         ingredienteDTO.setNombre("Harina de Trigo");
@@ -83,8 +69,7 @@ class IngredienteControllerTest {
 
     @Test
     void getIngrediente_FoundAndActive() throws Exception {
-        when(ingredienteService.getIngrediente(1L)).thenReturn(Optional.of(ingrediente));
-        when(ingredienteMapper.ingredienteToIngredienteDTO(any(Ingrediente.class))).thenReturn(ingredienteDTO);
+        when(ingredienteService.getIngrediente(1L)).thenReturn(Optional.of(ingredienteDTO));
 
         mockMvc.perform(get("/ingredientes/1"))
                 .andExpect(status().isOk())
@@ -94,8 +79,8 @@ class IngredienteControllerTest {
 
     @Test
     void getIngrediente_FoundAndInactive() throws Exception {
-        ingrediente.setEstado(false);
-        when(ingredienteService.getIngrediente(1L)).thenReturn(Optional.of(ingrediente));
+        ingredienteDTO.setEstado(false);
+        when(ingredienteService.getIngrediente(1L)).thenReturn(Optional.of(ingredienteDTO));
 
         mockMvc.perform(get("/ingredientes/1"))
                 .andExpect(status().isNoContent());

@@ -86,12 +86,13 @@ class IngredienteServiceTest {
     }
 
     @Test
-    void getIngrediente_ShouldReturnOptionalOfIngrediente() {
+    void getIngrediente_ShouldReturnOptionalOfIngredienteDTO() {
         // Arrange
         when(ingredienteRepository.findById(1L)).thenReturn(Optional.of(ingredienteGuardado));
+        when(ingredienteMapper.ingredienteToIngredienteDTO(ingredienteGuardado)).thenReturn(ingredienteDTO);
 
         // Act
-        Optional<Ingrediente> result = ingredienteService.getIngrediente(1L);
+        Optional<IngredienteDTO> result = ingredienteService.getIngrediente(1L);
 
         // Assert
         assertThat(result).isPresent();
