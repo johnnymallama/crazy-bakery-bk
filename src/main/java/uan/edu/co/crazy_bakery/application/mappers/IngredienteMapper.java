@@ -11,12 +11,12 @@ import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
 public interface IngredienteMapper {
 
     @Mappings({
-        @Mapping(target = "id", source = "ingrediente.id"),
-        @Mapping(target = "nombre", source = "ingrediente.nombre"),
-        @Mapping(target = "composicion", source = "ingrediente.composicion"),
-        @Mapping(target = "tipoIngrediente", source = "ingrediente.tipoIngrediente"),
-        @Mapping(target = "valor", source = "ingrediente.valor"),
-        @Mapping(target = "estado", source = "ingrediente.estado")
+        @Mapping(target = "id", source = "id"),
+        @Mapping(target = "nombre", source = "nombre"),
+        @Mapping(target = "composicion", source = "composicion"),
+        @Mapping(target = "tipoIngrediente", source = "tipoIngrediente"),
+        @Mapping(target = "valor", source = "valor"),
+        @Mapping(target = "estado", source = "estado")
     })
     IngredienteDTO ingredienteToIngredienteDTO(Ingrediente ingrediente);
 
