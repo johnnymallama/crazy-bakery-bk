@@ -1,6 +1,7 @@
 package uan.edu.co.crazy_bakery.infrastructure.web.controllers;
 
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,7 +24,7 @@ public class TortaController {
     @PostMapping
     public ResponseEntity<TortaDTO> crearTorta(@RequestBody CrearTortaDTO crearTortaDTO) {
         TortaDTO tortaCreada = tortaService.crearTorta(crearTortaDTO);
-        return ResponseEntity.ok(tortaCreada);
+        return ResponseEntity.status(HttpStatus.CREATED).body(tortaCreada);
     }
 
     @GetMapping
