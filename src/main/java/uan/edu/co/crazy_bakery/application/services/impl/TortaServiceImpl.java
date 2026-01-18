@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import uan.edu.co.crazy_bakery.application.dto.torta.CrearTortaDTO;
 import uan.edu.co.crazy_bakery.application.dto.torta.TortaDTO;
-import uan.edu.co.crazy_bakery.application.mapper.torta.TortaMapper;
+import uan.edu.co.crazy_bakery.application.mappers.TortaMapper;
 import uan.edu.co.crazy_bakery.application.services.TortaService;
 import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
 import uan.edu.co.crazy_bakery.domain.model.IngredienteTamano;
@@ -47,7 +47,7 @@ public class TortaServiceImpl implements TortaService {
         torta.setBizcocho(bizcocho);
         torta.setRelleno(relleno);
         torta.setCubertura(cubertura);
-        torta.setPorcion(tamano);
+        torta.setTamano(tamano);
         torta.setValor(valor);
         torta.setEstado(true);
 
@@ -75,8 +75,6 @@ public class TortaServiceImpl implements TortaService {
         IngredienteTamano ingredienteTamano = ingredienteTamanoRepository.findByTamanoAndTipoIngredienteAndEstado(tamano, tipoIngrediente, true)
                 .orElseThrow(() -> new RuntimeException("No se encontró la relación ingrediente-tamaño para " + tipoIngrediente));
 
-        float gramos = ingredienteTamano.getGramos();
-        // El valor del ingrediente está basado en 500 gramos
-        return (ingrediente.getValor() / 500) * gramos;
+        return ingrediente.getValor() * ingredienteTamano.getGramos();
     }
 }

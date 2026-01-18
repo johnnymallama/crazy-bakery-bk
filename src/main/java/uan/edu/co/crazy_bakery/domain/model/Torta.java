@@ -30,7 +30,7 @@ public class Torta {
 
     @ManyToOne
     @JoinColumn(name = "tamano_id", nullable = false)
-    private Tamano porcion;
+    private Tamano tamano;
 
     @Column(nullable = false)
     private float valor;

@@ -1,13 +1,14 @@
-package uan.edu.co.crazy_bakery.application.mapper.torta;
+package uan.edu.co.crazy_bakery.application.mappers;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import uan.edu.co.crazy_bakery.domain.model.Torta;
 import uan.edu.co.crazy_bakery.application.dto.torta.TortaDTO;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {TamanoMapper.class})
 public interface TortaMapper {
 
+    @Mapping(source = "tamano", target = "porcion")
     TortaDTO toDTO(Torta torta);
 
     @Mapping(target = "id", ignore = true)
@@ -16,6 +17,6 @@ public interface TortaMapper {
     @Mapping(target = "bizcocho", ignore = true)
     @Mapping(target = "relleno", ignore = true)
     @Mapping(target = "cubertura", ignore = true)
-    @Mapping(target = "porcion", ignore = true)
+    @Mapping(target = "tamano", source = "porcion")
     Torta toEntity(TortaDTO tortaDTO);
 }

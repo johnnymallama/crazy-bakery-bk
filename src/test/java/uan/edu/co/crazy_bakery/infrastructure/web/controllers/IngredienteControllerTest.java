@@ -11,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
+import uan.edu.co.crazy_bakery.application.mappers.IngredienteMapper;
 import uan.edu.co.crazy_bakery.application.services.IngredienteService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
@@ -32,6 +33,9 @@ class IngredienteControllerTest {
 
     @MockBean
     private IngredienteService ingredienteService;
+
+    @MockBean
+    private IngredienteMapper ingredienteMapper; // Mock faltante añadido
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -80,6 +84,7 @@ class IngredienteControllerTest {
     @Test
     void getIngrediente_FoundAndActive() throws Exception {
         when(ingredienteService.getIngrediente(1L)).thenReturn(Optional.of(ingrediente));
+        when(ingredienteMapper.ingredienteToIngredienteDTO(any(Ingrediente.class))).thenReturn(ingredienteDTO);
 
         mockMvc.perform(get("/ingredientes/1"))
                 .andExpect(status().isOk())

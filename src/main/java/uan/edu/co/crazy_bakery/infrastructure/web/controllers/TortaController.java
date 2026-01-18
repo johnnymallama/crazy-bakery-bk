@@ -14,7 +14,7 @@ import uan.edu.co.crazy_bakery.application.services.TortaService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/tortas")
+@RequestMapping("/torta")
 @AllArgsConstructor
 public class TortaController {
 
