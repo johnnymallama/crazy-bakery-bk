@@ -44,7 +44,7 @@ public class IngredienteController {
         return new ResponseEntity<>(ingredientes, HttpStatus.OK);
     }
 
-    @GetMapping("/tipos")
+    @GetMapping("/tiposIngrediente")
     public ResponseEntity<List<TipoIngrediente>> getAllTiposIngrediente() {
         List<TipoIngrediente> tipos = ingredienteService.getAllTiposIngrediente();
         return new ResponseEntity<>(tipos, HttpStatus.OK);
