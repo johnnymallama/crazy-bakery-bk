@@ -14,9 +14,7 @@ import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
 import uan.edu.co.crazy_bakery.application.services.IngredienteService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -104,16 +102,6 @@ class IngredienteControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(1L))
                 .andExpect(jsonPath("$[0].nombre").value("Harina de Trigo"));
-    }
-
-    @Test
-    void getAllTiposIngrediente_Success() throws Exception {
-        List<TipoIngrediente> tipos = Arrays.asList(TipoIngrediente.values());
-        when(ingredienteService.getAllTiposIngrediente()).thenReturn(tipos);
-
-        mockMvc.perform(get("/ingredientes/tipos"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0]").value(TipoIngrediente.BIZCOCHO.toString()));
     }
 
     @Test

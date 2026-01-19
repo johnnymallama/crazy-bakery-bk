@@ -26,6 +26,12 @@ public class IngredienteController {
         return new ResponseEntity<>(createdIngrediente, HttpStatus.CREATED);
     }
 
+    @GetMapping
+    public ResponseEntity<List<IngredienteDTO>> getAllIngredientes() {
+        List<IngredienteDTO> ingredientes = ingredienteService.getAllIngredientes();
+        return new ResponseEntity<>(ingredientes, HttpStatus.OK);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<IngredienteDTO> getIngrediente(@PathVariable Long id) {
         return ingredienteService.getIngrediente(id)
@@ -36,18 +42,6 @@ public class IngredienteController {
                     return new ResponseEntity<>(dto, HttpStatus.OK);
                 })
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
-    }
-
-    @GetMapping
-    public ResponseEntity<List<IngredienteDTO>> getAllIngredientes() {
-        List<IngredienteDTO> ingredientes = ingredienteService.getAllIngredientes();
-        return new ResponseEntity<>(ingredientes, HttpStatus.OK);
-    }
-
-    @GetMapping("/tiposIngrediente")
-    public ResponseEntity<List<TipoIngrediente>> getAllTiposIngrediente() {
-        List<TipoIngrediente> tipos = ingredienteService.getAllTiposIngrediente();
-        return new ResponseEntity<>(tipos, HttpStatus.OK);
     }
 
     @PutMapping("/{id}")
