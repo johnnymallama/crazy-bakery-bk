@@ -44,6 +44,12 @@ public class IngredienteController {
         return new ResponseEntity<>(ingredientes, HttpStatus.OK);
     }
 
+    @GetMapping("/tipos")
+    public ResponseEntity<List<TipoIngrediente>> getAllTiposIngrediente() {
+        List<TipoIngrediente> tipos = ingredienteService.getAllTiposIngrediente();
+        return new ResponseEntity<>(tipos, HttpStatus.OK);
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<IngredienteDTO> updateIngrediente(@PathVariable Long id, @RequestBody CrearIngredienteDTO crearIngredienteDTO) {
         return ingredienteService.updateIngrediente(id, crearIngredienteDTO)

@@ -9,6 +9,7 @@ import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.IngredienteRepository;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -74,5 +75,10 @@ public class IngredienteServiceImpl implements IngredienteService {
                 .stream()
                 .map(ingredienteMapper::ingredienteToIngredienteDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TipoIngrediente> getAllTiposIngrediente() {
+        return Arrays.asList(TipoIngrediente.values());
     }
 }

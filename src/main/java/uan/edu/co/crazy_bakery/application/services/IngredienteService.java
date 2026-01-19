@@ -20,4 +20,6 @@ public interface IngredienteService {
     Optional<IngredienteDTO> deactivateIngrediente(Long id);
 
     List<IngredienteDTO> findByTipoIngrediente(TipoIngrediente tipoIngrediente);
+
+    List<TipoIngrediente> getAllTiposIngrediente();
 }
