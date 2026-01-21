@@ -15,6 +15,7 @@ import uan.edu.co.crazy_bakery.application.services.IngredienteService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -141,5 +142,25 @@ class IngredienteControllerTest {
 
         mockMvc.perform(delete("/ingredientes/1"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void searchIngredientes_Success() throws Exception {
+        String tipoReceta = "TORTA";
+        Long tamanoId = 1L;
+        String tipoIngrediente = "BIZCOCHO";
+        List<IngredienteDTO> searchResults = Collections.singletonList(ingredienteDTO);
+
+        when(ingredienteService.searchIngredientes(tipoReceta, tamanoId, tipoIngrediente))
+                .thenReturn(searchResults);
+
+        mockMvc.perform(get("/ingredientes/search")
+                        .param("tipoReceta", tipoReceta)
+                        .param("tamanoId", String.valueOf(tamanoId))
+                        .param("tipoIngrediente", tipoIngrediente))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].nombre").value("Harina de Trigo"));
     }
 }

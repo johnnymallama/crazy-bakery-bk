@@ -183,4 +183,27 @@ class IngredienteServiceImplTest {
         assertThat(result.size()).isEqualTo(1);
         assertThat(result.get(0).getTipoIngrediente()).isEqualTo(tipoIngrediente);
     }
+
+    @Test
+    void searchIngredientes_ShouldReturnListOfIngredienteDTO() {
+        // Arrange
+        String tipoReceta = "TORTA";
+        Long tamanoId = 1L;
+        String tipoIngrediente = "BIZCOCHO";
+
+        when(ingredienteRepository.searchIngredientes(tipoReceta, tamanoId, tipoIngrediente))
+                .thenReturn(Collections.singletonList(ingredienteGuardado));
+        when(ingredienteMapper.ingredienteToIngredienteDTO(ingredienteGuardado)).thenReturn(ingredienteDTO);
+
+        // Act
+        List<IngredienteDTO> result = ingredienteService.searchIngredientes(tipoReceta, tamanoId, tipoIngrediente);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.size()).isEqualTo(1);
+        assertThat(result.get(0).getId()).isEqualTo(1L);
+
+        verify(ingredienteRepository, times(1)).searchIngredientes(tipoReceta, tamanoId, tipoIngrediente);
+        verify(ingredienteMapper, times(1)).ingredienteToIngredienteDTO(ingredienteGuardado);
+    }
 }

@@ -63,4 +63,13 @@ public class IngredienteController {
         List<IngredienteDTO> ingredientes = ingredienteService.findByTipoIngrediente(tipoIngrediente);
         return new ResponseEntity<>(ingredientes, HttpStatus.OK);
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<IngredienteDTO>> searchIngredientes(
+            @RequestParam String tipoReceta,
+            @RequestParam Long tamanoId,
+            @RequestParam String tipoIngrediente) {
+        List<IngredienteDTO> ingredientes = ingredienteService.searchIngredientes(tipoReceta, tamanoId, tipoIngrediente);
+        return new ResponseEntity<>(ingredientes, HttpStatus.OK);
+    }
 }

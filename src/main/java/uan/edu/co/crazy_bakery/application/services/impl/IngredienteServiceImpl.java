@@ -75,4 +75,12 @@ public class IngredienteServiceImpl implements IngredienteService {
                 .map(ingredienteMapper::ingredienteToIngredienteDTO)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<IngredienteDTO> searchIngredientes(String tipoReceta, Long tamanoId, String tipoIngrediente) {
+        List<Ingrediente> ingredientes = ingredienteRepository.searchIngredientes(tipoReceta, tamanoId, tipoIngrediente);
+        return ingredientes.stream()
+                .map(ingredienteMapper::ingredienteToIngredienteDTO)
+                .collect(Collectors.toList());
+    }
 }
