@@ -70,7 +70,7 @@ public class IngredienteServiceImpl implements IngredienteService {
 
     @Override
     public List<IngredienteDTO> findByTipoIngrediente(TipoIngrediente tipoIngrediente) {
-        return ingredienteRepository.findByTipoIngrediente(tipoIngrediente)
+        return ingredienteRepository.findByTipoIngredienteAndEstado(tipoIngrediente, true)
                 .stream()
                 .map(ingredienteMapper::ingredienteToIngredienteDTO)
                 .collect(Collectors.toList());

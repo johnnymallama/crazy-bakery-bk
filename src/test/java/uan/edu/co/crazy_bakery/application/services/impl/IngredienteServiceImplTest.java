@@ -9,7 +9,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
 import uan.edu.co.crazy_bakery.application.mappers.IngredienteMapper;
-import uan.edu.co.crazy_bakery.application.services.impl.IngredienteServiceImpl;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 import uan.edu.co.crazy_bakery.domain.model.Ingrediente;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.IngredienteRepository;
@@ -173,7 +172,7 @@ class IngredienteServiceImplTest {
     void findByTipoIngrediente_ShouldReturnListOfIngredienteDTO() {
         // Arrange
         TipoIngrediente tipoIngrediente = TipoIngrediente.BIZCOCHO;
-        when(ingredienteRepository.findByTipoIngrediente(tipoIngrediente)).thenReturn(Collections.singletonList(ingredienteGuardado));
+        when(ingredienteRepository.findByTipoIngredienteAndEstado(tipoIngrediente, true)).thenReturn(Collections.singletonList(ingredienteGuardado));
         when(ingredienteMapper.ingredienteToIngredienteDTO(ingredienteGuardado)).thenReturn(ingredienteDTO);
 
         // Act

@@ -10,6 +10,6 @@ public interface IngredienteRepository extends JpaRepository<Ingrediente, Long> 
 
     List<Ingrediente> findAllByEstado(boolean estado);
 
-    List<Ingrediente> findByTipoIngrediente(TipoIngrediente tipoIngrediente);
+    List<Ingrediente> findByTipoIngredienteAndEstado(TipoIngrediente tipoIngrediente, boolean estado);
 
 }
