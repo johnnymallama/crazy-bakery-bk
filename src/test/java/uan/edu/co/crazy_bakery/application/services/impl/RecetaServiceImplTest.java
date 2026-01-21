@@ -56,7 +56,7 @@ class RecetaServiceImplTest {
         receta.setId(1L);
         receta.setTorta(torta);
         receta.setCantidad(1);
-        receta.setValor(50000f);
+        receta.setCostoTotal(50000f);
         receta.setEstado(true);
 
         TortaDTO torta = new TortaDTO();
@@ -66,7 +66,7 @@ class RecetaServiceImplTest {
         recetaDTO.setId(1L);
         recetaDTO.setTorta(torta);
         recetaDTO.setCantidad(1);
-        recetaDTO.setValor(50000f);
+        recetaDTO.setCostoTotal(50000f);
         recetaDTO.setEstado(true);
     }
 
@@ -81,7 +81,7 @@ class RecetaServiceImplTest {
 
         assertNotNull(result);
         assertEquals(recetaDTO.getId(), result.getId());
-        assertEquals(50000f, result.getValor());
+        assertEquals(50000f, result.getCostoTotal());
         assertTrue(result.isEstado());
     }
 

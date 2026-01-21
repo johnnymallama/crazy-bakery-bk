@@ -8,5 +8,5 @@ public class CrearIngredienteDTO {
     private String nombre;
     private String composicion;
     private TipoIngrediente tipoIngrediente;
-    private float valor;
+    private float costoPorGramo;
 }

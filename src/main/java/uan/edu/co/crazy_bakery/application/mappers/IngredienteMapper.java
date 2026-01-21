@@ -15,7 +15,7 @@ public interface IngredienteMapper {
         @Mapping(target = "nombre", source = "nombre"),
         @Mapping(target = "composicion", source = "composicion"),
         @Mapping(target = "tipoIngrediente", source = "tipoIngrediente"),
-        @Mapping(target = "valor", source = "valor"),
+        @Mapping(target = "costoPorGramo", source = "costoPorGramo"),
         @Mapping(target = "estado", source = "estado")
     })
     IngredienteDTO ingredienteToIngredienteDTO(Ingrediente ingrediente);

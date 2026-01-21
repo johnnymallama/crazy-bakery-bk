@@ -18,7 +18,7 @@ CREATE TABLE ingrediente (
     nombre VARCHAR(255) NULL,
     composicion VARCHAR(255) NULL,
     tipo_ingrediente VARCHAR(255) NULL,
-    valor FLOAT NULL,
+    costo_por_gramo FLOAT NULL,
     CONSTRAINT pk_ingrediente PRIMARY KEY (id)
 );
 
@@ -67,7 +67,9 @@ CREATE TABLE receta (
     tipo_receta VARCHAR(255) NOT NULL,
     torta_id BIGINT NOT NULL,
     cantidad INT NOT NULL,
-    valor FLOAT NOT NULL,
+    costo_total FLOAT NOT NULL,
+    prompt VARCHAR(255) NULL,
+    imagen_url TEXT NULL,
     estado BOOLEAN NOT NULL DEFAULT TRUE,
     CONSTRAINT pk_receta PRIMARY KEY (id),
     CONSTRAINT fk_receta_torta FOREIGN KEY (torta_id) REFERENCES torta (id)

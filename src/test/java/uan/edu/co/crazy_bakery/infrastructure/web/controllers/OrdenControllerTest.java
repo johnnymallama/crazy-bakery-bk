@@ -92,7 +92,7 @@ class OrdenControllerTest {
 
     @Test
     void testGetOrdenesByEstado() {
-        EstadoOrden estado = EstadoOrden.ACEPTADO;
+        EstadoOrden estado = EstadoOrden.CREADO;
         List<OrdenDTO> ordenes = Collections.singletonList(new OrdenDTO());
         when(ordenService.getOrdenesByEstado(estado)).thenReturn(ordenes);
 
@@ -121,7 +121,7 @@ class OrdenControllerTest {
     void testCambiarEstadoOrden() {
         Long ordenId = 1L;
         CambiarEstadoOrdenDTO cambiarEstadoOrdenDTO = new CambiarEstadoOrdenDTO();
-        cambiarEstadoOrdenDTO.setEstado(EstadoOrden.PROCESO);
+        cambiarEstadoOrdenDTO.setEstado(EstadoOrden.CONFIRMADO);
         OrdenDTO ordenDTO = new OrdenDTO();
 
         when(ordenService.cambiarEstadoOrden(eq(ordenId), any(EstadoOrden.class))).thenReturn(ordenDTO);

@@ -45,14 +45,14 @@ class IngredienteControllerTest {
         ingredienteDTO.setNombre("Harina de Trigo");
         ingredienteDTO.setComposicion("Trigo");
         ingredienteDTO.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
-        ingredienteDTO.setValor(2500);
+        ingredienteDTO.setCostoPorGramo(2500);
         ingredienteDTO.setEstado(true);
 
         crearIngredienteDTO = new CrearIngredienteDTO();
         crearIngredienteDTO.setNombre("Harina de Trigo");
         crearIngredienteDTO.setComposicion("Trigo");
         crearIngredienteDTO.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
-        crearIngredienteDTO.setValor(2500);
+        crearIngredienteDTO.setCostoPorGramo(2500);
     }
 
     @Test

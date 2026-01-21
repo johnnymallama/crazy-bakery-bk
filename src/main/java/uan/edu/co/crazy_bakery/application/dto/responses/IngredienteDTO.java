@@ -7,7 +7,7 @@ public class IngredienteDTO {
     private String nombre;
     private String composicion;
     private TipoIngrediente tipoIngrediente;
-    private float valor;
+    private float costoPorGramo;
     private boolean estado;
 
     public Long getId() {
@@ -42,12 +42,12 @@ public class IngredienteDTO {
         this.tipoIngrediente = tipoIngrediente;
     }
 
-    public float getValor() {
-        return valor;
+    public float getCostoPorGramo() {
+        return this.costoPorGramo;
     }
 
-    public void setValor(float valor) {
-        this.valor = valor;
+    public void setCostoPorGramo(float costoPorGramo) {
+        this.costoPorGramo = costoPorGramo;
     }
 
     public boolean isEstado() {
@@ -65,7 +65,7 @@ public class IngredienteDTO {
                 ", nombre='" + nombre + '\'' +
                 ", composicion='" + composicion + '\'' +
                 ", tipoIngrediente=" + tipoIngrediente +
-                ", valor=" + valor +
+                ", costoPorGramo=" + costoPorGramo +
                 ", estado=" + estado +
                 '}';
     }

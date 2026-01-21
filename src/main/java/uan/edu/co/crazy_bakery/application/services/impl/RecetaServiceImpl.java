@@ -28,7 +28,7 @@ public class RecetaServiceImpl implements RecetaService {
 
         // Lógica para calcular el valor de la receta
         float valorReceta = torta.getValor() * receta.getCantidad();
-        receta.setValor(valorReceta);
+        receta.setCostoTotal(valorReceta);
         receta.setEstado(true);
 
         Receta recetaGuardada = recetaRepository.save(receta);

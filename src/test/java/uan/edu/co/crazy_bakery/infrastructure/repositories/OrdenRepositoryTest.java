@@ -41,7 +41,7 @@ class OrdenRepositoryTest {
         Orden orden = new Orden();
         orden.setUsuario(usuario);
         orden.setFecha(new Date());
-        orden.setEstado(EstadoOrden.ACEPTADO);
+        orden.setEstado(EstadoOrden.CREADO);
         orden.setValorTotal(100.0f);
 
         // when
@@ -68,7 +68,7 @@ class OrdenRepositoryTest {
         Orden orden = new Orden();
         orden.setUsuario(usuario);
         orden.setFecha(new Date());
-        orden.setEstado(EstadoOrden.ACEPTADO);
+        orden.setEstado(EstadoOrden.CREADO);
         orden.setValorTotal(100.0f);
         orden.setNotas(new ArrayList<>());
         Orden savedOrden = entityManager.persistFlushFind(orden);
@@ -116,7 +116,7 @@ class OrdenRepositoryTest {
         Receta receta = new Receta();
         receta.setTorta(torta);
         receta.setCantidad(1);
-        receta.setValor(150.0f);
+        receta.setCostoTotal(150.0f);
         receta.setEstado(true);
         receta.setTipoReceta(TipoReceta.TORTA);
         entityManager.persist(receta);
@@ -133,7 +133,7 @@ class OrdenRepositoryTest {
         Orden orden = new Orden();
         orden.setUsuario(usuario);
         orden.setFecha(new Date());
-        orden.setEstado(EstadoOrden.ACEPTADO);
+        orden.setEstado(EstadoOrden.CREADO);
         orden.setValorTotal(100.0f);
         orden.setRecetas(new ArrayList<>());
         Orden savedOrden = entityManager.persistFlushFind(orden);
@@ -152,7 +152,7 @@ class OrdenRepositoryTest {
         Ingrediente ingrediente = new Ingrediente();
         ingrediente.setTipoIngrediente(tipo);
         ingrediente.setNombre(nombre);
-        ingrediente.setValor(50.0f);
+        ingrediente.setCostoPorGramo(50.0f);
         ingrediente.setEstado(true);
         entityManager.persist(ingrediente);
         return ingrediente;

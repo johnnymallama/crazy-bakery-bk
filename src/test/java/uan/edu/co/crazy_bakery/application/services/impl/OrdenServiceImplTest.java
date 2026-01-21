@@ -53,7 +53,7 @@ class OrdenServiceImplTest {
         CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO("1", List.of(1L), List.of("Nota 1"));
         Usuario usuario = new Usuario();
         Receta receta = new Receta();
-        receta.setValor(10.0f);
+        receta.setCostoTotal(10.0f);
         Orden orden = new Orden();
         OrdenDTO ordenDTO = new OrdenDTO();
 
@@ -80,10 +80,10 @@ class OrdenServiceImplTest {
 
     @Test
     void testGetOrdenesByEstado() {
-        when(ordenRepository.findByEstado(EstadoOrden.ACEPTADO)).thenReturn(List.of(new Orden()));
+        when(ordenRepository.findByEstado(EstadoOrden.CREADO)).thenReturn(List.of(new Orden()));
         when(ordenMapper.toDto(any(Orden.class))).thenReturn(new OrdenDTO());
 
-        List<OrdenDTO> result = ordenService.getOrdenesByEstado(EstadoOrden.ACEPTADO);
+        List<OrdenDTO> result = ordenService.getOrdenesByEstado(EstadoOrden.CREADO);
 
         assertFalse(result.isEmpty());
     }
@@ -104,10 +104,10 @@ class OrdenServiceImplTest {
     @Test
     void testCambiarEstadoOrden() {
         Long ordenId = 1L;
-        EstadoOrden nuevoEstado = EstadoOrden.PROCESO;
+        EstadoOrden nuevoEstado = EstadoOrden.EN_PROCESO;
         Orden orden = new Orden();
         orden.setId(ordenId);
-        orden.setEstado(EstadoOrden.ACEPTADO);
+        orden.setEstado(EstadoOrden.CREADO);
 
         OrdenDTO ordenDTO = new OrdenDTO();
         ordenDTO.setId(ordenId);
@@ -158,7 +158,7 @@ class OrdenServiceImplTest {
 
         Receta receta = new Receta();
         receta.setId(recetaId);
-        receta.setValor(25.0f);
+        receta.setCostoTotal(25.0f);
 
         OrdenDTO ordenDTO = new OrdenDTO();
         ordenDTO.setId(ordenId);

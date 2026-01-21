@@ -29,7 +29,13 @@ public class Receta {
     private int cantidad;
 
     @Column(nullable = false)
-    private float valor;
+    private float costoTotal;
+
+    @Column(nullable = true)
+    private String prompt;
+
+    @Column(nullable = true)
+    private String imagenUrl;
 
     @Column(nullable = false)
     private boolean estado = true;

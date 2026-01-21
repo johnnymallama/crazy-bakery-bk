@@ -80,14 +80,14 @@ public class OrdenServiceImpl implements OrdenService {
             throw new RuntimeException("Una o más recetas no fueron encontradas");
         }
 
-        float valorTotal = (float) recetas.stream().mapToDouble(Receta::getValor).sum();
+        float valorTotal = (float) recetas.stream().mapToDouble(Receta::getCostoTotal).sum();
 
         Orden orden = ordenMapper.toEntity(crearOrdenDTO);
         orden.setUsuario(usuario);
         orden.setRecetas(recetas);
         orden.setFecha(new Date());
         orden.setValorTotal(valorTotal);
-        orden.setEstado(uan.edu.co.crazy_bakery.domain.enums.EstadoOrden.ACEPTADO);
+        orden.setEstado(uan.edu.co.crazy_bakery.domain.enums.EstadoOrden.CREADO);
 
         return ordenMapper.toDto(ordenRepository.save(orden));
     }
@@ -131,7 +131,7 @@ public class OrdenServiceImpl implements OrdenService {
         }
 
         orden.getRecetas().add(receta);
-        float nuevoValorTotal = (float) orden.getRecetas().stream().mapToDouble(Receta::getValor).sum();
+        float nuevoValorTotal = (float) orden.getRecetas().stream().mapToDouble(Receta::getCostoTotal).sum();
         orden.setValorTotal(nuevoValorTotal);
 
         Orden ordenActualizada = ordenRepository.save(orden);

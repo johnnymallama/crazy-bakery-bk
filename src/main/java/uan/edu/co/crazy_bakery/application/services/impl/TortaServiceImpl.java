@@ -75,6 +75,6 @@ public class TortaServiceImpl implements TortaService {
         IngredienteTamano ingredienteTamano = ingredienteTamanoRepository.findByTamanoAndTipoIngredienteAndEstado(tamano, tipoIngrediente, true)
                 .orElseThrow(() -> new RuntimeException("No se encontró la relación ingrediente-tamaño para " + tipoIngrediente));
 
-        return ingrediente.getValor() * ingredienteTamano.getGramos();
+        return ingrediente.getCostoPorGramo() * ingredienteTamano.getGramos();
     }
 }

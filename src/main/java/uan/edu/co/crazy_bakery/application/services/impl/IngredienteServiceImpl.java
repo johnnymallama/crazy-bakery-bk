@@ -52,7 +52,7 @@ public class IngredienteServiceImpl implements IngredienteService {
                     ingrediente.setNombre(crearIngredienteDTO.getNombre());
                     ingrediente.setComposicion(crearIngredienteDTO.getComposicion());
                     ingrediente.setTipoIngrediente(crearIngredienteDTO.getTipoIngrediente());
-                    ingrediente.setValor(crearIngredienteDTO.getValor());
+                    ingrediente.setCostoPorGramo(crearIngredienteDTO.getCostoPorGramo());
                     ingrediente = ingredienteRepository.save(ingrediente);
                     return ingredienteMapper.ingredienteToIngredienteDTO(ingrediente);
                 });

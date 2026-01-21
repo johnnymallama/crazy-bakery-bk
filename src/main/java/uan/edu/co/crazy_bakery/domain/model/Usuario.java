@@ -1,13 +1,18 @@
 package uan.edu.co.crazy_bakery.domain.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import uan.edu.co.crazy_bakery.domain.enums.TipoUsuario;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity(name = "usuario")
 public class Usuario {
     @Id
@@ -23,5 +28,7 @@ public class Usuario {
     private String direccion;
     private String departamento;
     private String ciudad;
-    private boolean estado;
+    
+    @Column(nullable = false)
+    private boolean estado = true;
 }

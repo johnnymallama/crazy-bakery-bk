@@ -23,8 +23,8 @@ public class Ingrediente {
     @Column(name = "tipo_ingrediente")
     private TipoIngrediente tipoIngrediente;
 
-    @Column(name = "valor")
-    private float valor;
+    @Column(name = "costo_por_gramo")
+    private float costoPorGramo;
 
     @Column(name = "estado")
     private Boolean estado = true;

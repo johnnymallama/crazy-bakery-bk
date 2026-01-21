@@ -1,4 +1,4 @@
-package uan.edu.co.crazy_bakery.application.services;
+package uan.edu.co.crazy_bakery.application.services.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class IngredienteServiceTest {
+class IngredienteServiceImplTest {
 
     @Mock
     private IngredienteRepository ingredienteRepository;
@@ -45,20 +45,20 @@ class IngredienteServiceTest {
         crearIngredienteDTO.setNombre("Levadura");
         crearIngredienteDTO.setComposicion("Hongos");
         crearIngredienteDTO.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
-        crearIngredienteDTO.setValor(500);
+        crearIngredienteDTO.setCostoPorGramo(500);
 
         ingredienteSinGuardar = new Ingrediente();
         ingredienteSinGuardar.setNombre("Levadura");
         ingredienteSinGuardar.setComposicion("Hongos");
         ingredienteSinGuardar.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
-        ingredienteSinGuardar.setValor(500);
+        ingredienteSinGuardar.setCostoPorGramo(500);
 
         ingredienteGuardado = new Ingrediente();
         ingredienteGuardado.setId(1L);
         ingredienteGuardado.setNombre("Levadura");
         ingredienteGuardado.setComposicion("Hongos");
         ingredienteGuardado.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
-        ingredienteGuardado.setValor(500);
+        ingredienteGuardado.setCostoPorGramo(500);
         ingredienteGuardado.setEstado(true);
 
         ingredienteDTO = new IngredienteDTO();
@@ -66,7 +66,7 @@ class IngredienteServiceTest {
         ingredienteDTO.setNombre("Levadura");
         ingredienteDTO.setComposicion("Hongos");
         ingredienteDTO.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
-        ingredienteDTO.setValor(500);
+        ingredienteDTO.setCostoPorGramo(500);
     }
 
     @Test

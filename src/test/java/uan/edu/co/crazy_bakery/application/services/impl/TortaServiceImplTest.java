@@ -59,15 +59,15 @@ class TortaServiceImplTest {
 
         Ingrediente bizcocho = new Ingrediente();
         bizcocho.setId(1L);
-        bizcocho.setValor(10.0f);
+        bizcocho.setCostoPorGramo(10.0f);
 
         Ingrediente relleno = new Ingrediente();
         relleno.setId(2L);
-        relleno.setValor(5.0f);
+        relleno.setCostoPorGramo(5.0f);
 
         Ingrediente cubertura = new Ingrediente();
         cubertura.setId(3L);
-        cubertura.setValor(8.0f);
+        cubertura.setCostoPorGramo(8.0f);
 
         Tamano tamano = new Tamano();
         tamano.setId(4L);
@@ -195,7 +195,7 @@ class TortaServiceImplTest {
 
         Ingrediente bizcocho = new Ingrediente();
         bizcocho.setId(1L);
-        bizcocho.setValor(10.0f);
+        bizcocho.setCostoPorGramo(10.0f);
 
         Tamano tamano = new Tamano();
         tamano.setId(4L);

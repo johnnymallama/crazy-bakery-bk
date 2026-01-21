@@ -44,7 +44,7 @@ class RecetaControllerTest {
         recetaDTO.setId(1L);
         recetaDTO.setTorta(torta);
         recetaDTO.setCantidad(1);
-        recetaDTO.setValor(50000f);
+        recetaDTO.setCostoTotal(50000f);
         recetaDTO.setEstado(true);
         recetaDTO.setTipoReceta(TipoReceta.TORTA);
     }

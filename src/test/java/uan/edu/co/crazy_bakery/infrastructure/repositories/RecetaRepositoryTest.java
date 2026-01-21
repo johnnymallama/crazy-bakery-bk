@@ -41,7 +41,7 @@ class RecetaRepositoryTest {
         bizcocho.setNombre("Bizcocho de Chocolate");
         bizcocho.setComposicion("Chocolate");
         bizcocho.setTipoIngrediente(uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente.BIZCOCHO);
-        bizcocho.setValor(10000);
+        bizcocho.setCostoPorGramo(10000);
         bizcocho.setEstado(true);
         ingredienteRepository.save(bizcocho);
 
@@ -49,7 +49,7 @@ class RecetaRepositoryTest {
         relleno.setNombre("Relleno de Fresa");
         relleno.setComposicion("Fresa");
         relleno.setTipoIngrediente(uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente.RELLENO);
-        relleno.setValor(5000);
+        relleno.setCostoPorGramo(5000);
         relleno.setEstado(true);
         ingredienteRepository.save(relleno);
 
@@ -57,7 +57,7 @@ class RecetaRepositoryTest {
         cobertura.setNombre("Cobertura de Vainilla");
         cobertura.setComposicion("Vainilla");
         cobertura.setTipoIngrediente(uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente.COBERTURA);
-        cobertura.setValor(8000);
+        cobertura.setCostoPorGramo(8000);
         cobertura.setEstado(true);
         ingredienteRepository.save(cobertura);
 
@@ -85,7 +85,7 @@ class RecetaRepositoryTest {
         Receta receta = new Receta();
         receta.setTorta(torta);
         receta.setCantidad(2);
-        receta.setValor(torta.getValor() * 2);
+        receta.setCostoTotal(torta.getValor() * 2);
         receta.setEstado(true);
         receta.setTipoReceta(TipoReceta.TORTA);
 
@@ -98,7 +98,7 @@ class RecetaRepositoryTest {
         Receta foundReceta = foundRecetaOpt.get();
         assertEquals(torta.getId(), foundReceta.getTorta().getId());
         assertEquals(2, foundReceta.getCantidad());
-        assertEquals(200000f, foundReceta.getValor());
+        assertEquals(200000f, foundReceta.getCostoTotal());
         assertTrue(foundReceta.isEstado());
     }
 }
