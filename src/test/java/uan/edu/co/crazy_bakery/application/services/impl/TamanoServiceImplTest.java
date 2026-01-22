@@ -120,4 +120,16 @@ class TamanoServiceImplTest {
         assertFalse(tamano.isEstado());
         verify(tamanoRepository, times(1)).save(tamano);
     }
+
+    @Test
+    void testObtenerTamanosPorTipoReceta() {
+        when(tamanoRepository.findAllByTipoRecetaAndEstadoTrue(TipoReceta.TORTA)).thenReturn(Collections.singletonList(tamano));
+        when(tamanoMapper.tamanosToTamanoDTOs(anyList())).thenReturn(Collections.singletonList(tamanoDTO));
+
+        List<TamanoDTO> result = tamanoService.obtenerTamanosPorTipoReceta(TipoReceta.TORTA);
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.size());
+    }
 }

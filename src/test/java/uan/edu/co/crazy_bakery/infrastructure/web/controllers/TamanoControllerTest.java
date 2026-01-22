@@ -99,4 +99,15 @@ class TamanoControllerTest {
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
         verify(tamanoService, times(1)).eliminarTamano(1L);
     }
+
+    @Test
+    void testObtenerTamanosPorTipoReceta() {
+        when(tamanoService.obtenerTamanosPorTipoReceta(TipoReceta.TORTA)).thenReturn(Collections.singletonList(tamanoDTO));
+
+        ResponseEntity<List<TamanoDTO>> response = tamanoController.obtenerTamanosPorTipoReceta(TipoReceta.TORTA);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().size());
+    }
 }

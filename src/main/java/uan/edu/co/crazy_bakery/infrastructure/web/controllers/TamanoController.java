@@ -7,6 +7,7 @@ import uan.edu.co.crazy_bakery.application.dto.requests.ActualizarTamanoDTO;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearTamanoDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.TamanoDTO;
 import uan.edu.co.crazy_bakery.application.services.TamanoService;
+import uan.edu.co.crazy_bakery.domain.enums.TipoReceta;
 
 import java.util.List;
 
@@ -48,5 +49,11 @@ public class TamanoController {
     public ResponseEntity<Void> eliminarTamano(@PathVariable Long id) {
         tamanoService.eliminarTamano(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/tipo-receta/{tipoReceta}")
+    public ResponseEntity<List<TamanoDTO>> obtenerTamanosPorTipoReceta(@PathVariable TipoReceta tipoReceta) {
+        List<TamanoDTO> tamanos = tamanoService.obtenerTamanosPorTipoReceta(tipoReceta);
+        return ResponseEntity.ok(tamanos);
     }
 }

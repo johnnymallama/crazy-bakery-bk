@@ -3,6 +3,7 @@ package uan.edu.co.crazy_bakery.application.services;
 import uan.edu.co.crazy_bakery.application.dto.requests.ActualizarTamanoDTO;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearTamanoDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.TamanoDTO;
+import uan.edu.co.crazy_bakery.domain.enums.TipoReceta;
 
 import java.util.List;
 
@@ -17,4 +18,6 @@ public interface TamanoService {
     TamanoDTO actualizarTamano(Long id, ActualizarTamanoDTO actualizarTamanoDTO);
 
     void eliminarTamano(Long id);
+
+    List<TamanoDTO> obtenerTamanosPorTipoReceta(TipoReceta tipoReceta);
 }
