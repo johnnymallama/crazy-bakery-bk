@@ -11,7 +11,7 @@ public class TortaDTO {
     private IngredienteDTO bizcocho;
     private IngredienteDTO relleno;
     private IngredienteDTO cubertura;
-    private TamanoDTO porcion;
+    private TamanoDTO tamano;
     private float valor;
     private boolean estado;
 

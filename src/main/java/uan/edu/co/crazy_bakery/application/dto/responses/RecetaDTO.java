@@ -17,5 +17,7 @@ public class RecetaDTO {
     private int cantidad;
     private float costoTotal;
     private boolean estado;
+    private String prompt;
+    private String imagenUrl;
 
 }

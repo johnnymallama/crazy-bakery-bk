@@ -5,11 +5,13 @@
   channel = "stable-23.11"; # or "unstable"
   # Use https://search.nixos.org/packages to find packages
   packages = [
-    pkgs.zulu17
+    pkgs.zulu21
     pkgs.maven
   ];
   # Sets environment variables in the workspace
-  env = {};
+  env = {
+    JAVA_HOME = "${pkgs.zulu21}";
+  };
   idx = {
     # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
     extensions = [
@@ -23,7 +25,8 @@
       };
       # Runs when a workspace is (re)started
       onStart = {
-        run-server = "PORT=3000 mvn spring-boot:run";
+        # The server will now run on the default port 8080
+        run-server = "mvn spring-boot:run";
       };
     };
   };

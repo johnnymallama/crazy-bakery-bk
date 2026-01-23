@@ -48,11 +48,11 @@ class TortaControllerTest {
         tortaDTOReturned.setBizcocho(new IngredienteDTO());
         tortaDTOReturned.setRelleno(new IngredienteDTO());
         tortaDTOReturned.setCubertura(new IngredienteDTO());
-        tortaDTOReturned.setPorcion(new TamanoDTO());
+        tortaDTOReturned.setTamano(new TamanoDTO());
         tortaDTOReturned.getBizcocho().setId(1L);
         tortaDTOReturned.getRelleno().setId(2L);
         tortaDTOReturned.getCubertura().setId(3L);
-        tortaDTOReturned.getPorcion().setId(4L);
+        tortaDTOReturned.getTamano().setId(4L);
 
 
         when(tortaService.crearTorta(any(CrearTortaDTO.class))).thenReturn(tortaDTOReturned);

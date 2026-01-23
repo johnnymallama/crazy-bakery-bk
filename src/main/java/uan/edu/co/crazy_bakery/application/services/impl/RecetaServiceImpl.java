@@ -31,6 +31,8 @@ public class RecetaServiceImpl implements RecetaService {
         receta.setCostoTotal(valorReceta);
         receta.setEstado(true);
 
+        // Los campos 'prompt' y 'imagenUrl' ya vienen en el DTO y son mapeados por el mapper
+
         Receta recetaGuardada = recetaRepository.save(receta);
 
         return recetaMapper.recetaToRecetaDTO(recetaGuardada);

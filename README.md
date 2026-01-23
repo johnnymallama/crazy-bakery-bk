@@ -73,4 +73,4 @@ Una vez que la nueva imagen está en Artifact Registry, puedes crear o actualiza
 | `INSTANCE_CONNECTION_NAME` | `uan-especializacion:us-central1:uan-especializacion` |
 ## Prueba 
 mvn compile jib:build
-B_PASSWORD=Clave mvn spring-boot:run
+mvn spring-boot:run

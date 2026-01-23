@@ -11,6 +11,7 @@ import uan.edu.co.crazy_bakery.application.dto.torta.TortaDTO;
 import uan.edu.co.crazy_bakery.application.mappers.RecetaMapper;
 import uan.edu.co.crazy_bakery.domain.model.Receta;
 import uan.edu.co.crazy_bakery.domain.model.Torta;
+import uan.edu.co.crazy_bakery.domain.enums.TipoReceta;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.RecetaRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.TortaRepository;
 
@@ -18,8 +19,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class RecetaServiceImplTest {
 
@@ -35,86 +35,131 @@ class RecetaServiceImplTest {
     @InjectMocks
     private RecetaServiceImpl recetaService;
 
-    private Receta receta;
-    private RecetaDTO recetaDTO;
-    private CrearRecetaDTO crearRecetaDTO;
-    private Torta torta;
-
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-
-        torta = new Torta();
-        torta.setId(1L);
-        torta.setValor(50000f);
-
-        crearRecetaDTO = new CrearRecetaDTO();
-        crearRecetaDTO.setTortaId(1L);
-        crearRecetaDTO.setCantidad(1);
-
-        receta = new Receta();
-        receta.setId(1L);
-        receta.setTorta(torta);
-        receta.setCantidad(1);
-        receta.setCostoTotal(50000f);
-        receta.setEstado(true);
-
-        TortaDTO torta = new TortaDTO();
-        torta.setId(1L);
-
-        recetaDTO = new RecetaDTO();
-        recetaDTO.setId(1L);
-        recetaDTO.setTorta(torta);
-        recetaDTO.setCantidad(1);
-        recetaDTO.setCostoTotal(50000f);
-        recetaDTO.setEstado(true);
     }
 
     @Test
-    void crearReceta_Success() {
-        when(tortaRepository.findById(anyLong())).thenReturn(Optional.of(torta));
-        when(recetaMapper.crearRecetaDTOToReceta(any(CrearRecetaDTO.class), any(Torta.class))).thenReturn(receta);
-        when(recetaRepository.save(any(Receta.class))).thenReturn(receta);
-        when(recetaMapper.recetaToRecetaDTO(any(Receta.class))).thenReturn(recetaDTO);
+    void testCrearReceta() {
+        // Arrange
+        long tortaId = 1L;
+        CrearRecetaDTO crearRecetaDTO = new CrearRecetaDTO();
+        crearRecetaDTO.setTortaId(tortaId);
+        crearRecetaDTO.setCantidad(2);
+        crearRecetaDTO.setTipoReceta(TipoReceta.TORTA);
+        crearRecetaDTO.setPrompt("a delicious chocolate cake");
+        crearRecetaDTO.setImagenUrl("http://example.com/cake.png");
 
+        Torta torta = new Torta();
+        torta.setId(tortaId);
+        torta.setValor(50.0f);
+
+        Receta receta = new Receta();
+        receta.setTorta(torta);
+        receta.setCantidad(crearRecetaDTO.getCantidad());
+        receta.setTipoReceta(crearRecetaDTO.getTipoReceta());
+        receta.setPrompt(crearRecetaDTO.getPrompt());
+        receta.setImagenUrl(crearRecetaDTO.getImagenUrl());
+
+        Receta recetaGuardada = new Receta();
+        recetaGuardada.setId(1L);
+        recetaGuardada.setTorta(torta);
+        recetaGuardada.setCantidad(2);
+        recetaGuardada.setCostoTotal(100.0f);
+        recetaGuardada.setEstado(true);
+        recetaGuardada.setPrompt("a delicious chocolate cake");
+        recetaGuardada.setImagenUrl("http://example.com/cake.png");
+
+        RecetaDTO expectedDto = new RecetaDTO();
+        expectedDto.setId(1L);
+        expectedDto.setTorta(new TortaDTO());
+        expectedDto.setCantidad(2);
+        expectedDto.setCostoTotal(100.0f);
+        expectedDto.setEstado(true);
+        expectedDto.setPrompt("a delicious chocolate cake");
+        expectedDto.setImagenUrl("http://example.com/cake.png");
+
+        when(tortaRepository.findById(tortaId)).thenReturn(Optional.of(torta));
+        when(recetaMapper.crearRecetaDTOToReceta(crearRecetaDTO, torta)).thenReturn(receta);
+        when(recetaRepository.save(any(Receta.class))).thenReturn(recetaGuardada);
+        when(recetaMapper.recetaToRecetaDTO(recetaGuardada)).thenReturn(expectedDto);
+
+        // Act
         RecetaDTO result = recetaService.crearReceta(crearRecetaDTO);
 
+        // Assert
         assertNotNull(result);
-        assertEquals(recetaDTO.getId(), result.getId());
-        assertEquals(50000f, result.getCostoTotal());
+        assertEquals(expectedDto.getId(), result.getId());
+        assertEquals(expectedDto.getPrompt(), result.getPrompt());
+        assertEquals(expectedDto.getImagenUrl(), result.getImagenUrl());
+        assertEquals(100.0f, result.getCostoTotal());
         assertTrue(result.isEstado());
+
+        verify(tortaRepository, times(1)).findById(tortaId);
+        verify(recetaRepository, times(1)).save(any(Receta.class));
+        verify(recetaMapper, times(1)).crearRecetaDTOToReceta(crearRecetaDTO, torta);
+        verify(recetaMapper, times(1)).recetaToRecetaDTO(recetaGuardada);
     }
 
     @Test
-    void crearReceta_TortaNotFound() {
-        when(tortaRepository.findById(anyLong())).thenReturn(Optional.empty());
+    void testCrearReceta_TortaNotFound() {
+        // Arrange
+        long tortaId = 1L;
+        CrearRecetaDTO crearRecetaDTO = new CrearRecetaDTO();
+        crearRecetaDTO.setTortaId(tortaId);
 
-        Exception exception = assertThrows(RuntimeException.class, () -> {
+        when(tortaRepository.findById(tortaId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             recetaService.crearReceta(crearRecetaDTO);
         });
 
-        assertEquals("Torta no encontrada con id: " + crearRecetaDTO.getTortaId(), exception.getMessage());
+        assertEquals("Torta no encontrada con id: " + tortaId, exception.getMessage());
     }
 
     @Test
-    void obtenerRecetaPorId_Success() {
-        when(recetaRepository.findById(anyLong())).thenReturn(Optional.of(receta));
-        when(recetaMapper.recetaToRecetaDTO(any(Receta.class))).thenReturn(recetaDTO);
+    void testObtenerRecetaPorId() {
+        // Arrange
+        long recetaId = 1L;
+        Receta receta = new Receta();
+        receta.setId(recetaId);
+        receta.setPrompt("test prompt");
+        receta.setImagenUrl("test url");
 
-        RecetaDTO result = recetaService.obtenerRecetaPorId(1L);
+        RecetaDTO expectedDto = new RecetaDTO();
+        expectedDto.setId(recetaId);
+        expectedDto.setPrompt("test prompt");
+        expectedDto.setImagenUrl("test url");
 
+        when(recetaRepository.findById(recetaId)).thenReturn(Optional.of(receta));
+        when(recetaMapper.recetaToRecetaDTO(receta)).thenReturn(expectedDto);
+
+        // Act
+        RecetaDTO result = recetaService.obtenerRecetaPorId(recetaId);
+
+        // Assert
         assertNotNull(result);
-        assertEquals(recetaDTO.getId(), result.getId());
+        assertEquals(expectedDto.getId(), result.getId());
+        assertEquals(expectedDto.getPrompt(), result.getPrompt());
+        assertEquals(expectedDto.getImagenUrl(), result.getImagenUrl());
+
+        verify(recetaRepository, times(1)).findById(recetaId);
+        verify(recetaMapper, times(1)).recetaToRecetaDTO(receta);
     }
 
     @Test
-    void obtenerRecetaPorId_NotFound() {
-        when(recetaRepository.findById(anyLong())).thenReturn(Optional.empty());
+    void testObtenerRecetaPorId_NotFound() {
+        // Arrange
+        long recetaId = 1L;
+        when(recetaRepository.findById(recetaId)).thenReturn(Optional.empty());
 
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            recetaService.obtenerRecetaPorId(99L);
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            recetaService.obtenerRecetaPorId(recetaId);
         });
 
-        assertEquals("Receta no encontrada con id: 99", exception.getMessage());
+        assertEquals("Receta no encontrada con id: " + recetaId, exception.getMessage());
     }
 }

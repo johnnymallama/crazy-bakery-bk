@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearRecetaDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.RecetaDTO;
-import uan.edu.co.crazy_bakery.application.dto.torta.TortaDTO;
 import uan.edu.co.crazy_bakery.application.services.RecetaService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoReceta;
 
@@ -25,66 +24,72 @@ class RecetaControllerTest {
     @InjectMocks
     private RecetaController recetaController;
 
-    private RecetaDTO recetaDTO;
-    private CrearRecetaDTO crearRecetaDTO;
-
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+    }
 
-        crearRecetaDTO = new CrearRecetaDTO();
+    @Test
+    void crearReceta_withValidRequest_shouldReturnCreated() {
+        // Arrange
+        CrearRecetaDTO crearRecetaDTO = new CrearRecetaDTO();
         crearRecetaDTO.setTortaId(1L);
         crearRecetaDTO.setCantidad(1);
         crearRecetaDTO.setTipoReceta(TipoReceta.TORTA);
+        crearRecetaDTO.setPrompt("A test prompt");
+        crearRecetaDTO.setImagenUrl("http://example.com/image.png");
 
-        TortaDTO torta = new TortaDTO();
-        torta.setId(1L);
-
-        recetaDTO = new RecetaDTO();
+        RecetaDTO recetaDTO = new RecetaDTO();
         recetaDTO.setId(1L);
-        recetaDTO.setTorta(torta);
-        recetaDTO.setCantidad(1);
-        recetaDTO.setCostoTotal(50000f);
-        recetaDTO.setEstado(true);
-        recetaDTO.setTipoReceta(TipoReceta.TORTA);
-    }
+        recetaDTO.setPrompt("A test prompt");
+        recetaDTO.setImagenUrl("http://example.com/image.png");
 
-    @Test
-    void testCrearReceta() {
         when(recetaService.crearReceta(any(CrearRecetaDTO.class))).thenReturn(recetaDTO);
 
+        // Act
         ResponseEntity<RecetaDTO> response = recetaController.crearReceta(crearRecetaDTO);
 
+        // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(recetaDTO, response.getBody());
+        assertEquals(1L, response.getBody().getId());
+        assertEquals("A test prompt", response.getBody().getPrompt());
     }
 
     @Test
-    void testObtenerRecetaPorId_Found() {
-        when(recetaService.obtenerRecetaPorId(1L)).thenReturn(recetaDTO);
+    void obtenerRecetaPorId_whenRecetaExists_shouldReturnReceta() {
+        // Arrange
+        long recetaId = 1L;
+        RecetaDTO recetaDTO = new RecetaDTO();
+        recetaDTO.setId(recetaId);
+        recetaDTO.setPrompt("A test prompt for existing recipe");
+        recetaDTO.setImagenUrl("http://example.com/existing.png");
 
-        ResponseEntity<RecetaDTO> response = recetaController.obtenerRecetaPorId(1L);
+        when(recetaService.obtenerRecetaPorId(recetaId)).thenReturn(recetaDTO);
 
+        // Act
+        ResponseEntity<RecetaDTO> response = recetaController.obtenerRecetaPorId(recetaId);
+
+        // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(recetaDTO.getId(), response.getBody().getId());
+        assertEquals(recetaId, response.getBody().getId());
     }
 
     @Test
-    void testObtenerRecetaPorId_NotFound() {
-        long recetaId = 99L;
-        when(recetaService.obtenerRecetaPorId(recetaId)).thenThrow(new RuntimeException("Receta no encontrada con id: " + recetaId));
+    void obtenerRecetaPorId_whenRecetaNotFound_shouldReturnNotFound() {
+        // Arrange
+        long recetaId = 2L;
+        when(recetaService.obtenerRecetaPorId(recetaId)).thenThrow(new RuntimeException("Receta no encontrada"));
 
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            recetaController.obtenerRecetaPorId(recetaId);
-        });
+        // Act
+        ResponseEntity<RecetaDTO> response = recetaController.obtenerRecetaPorId(recetaId);
 
-        String expectedMessage = "Receta no encontrada con id: " + recetaId;
-        String actualMessage = exception.getMessage();
-
-        assertTrue(actualMessage.contains(expectedMessage));
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNull(response.getBody());
     }
 }

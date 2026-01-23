@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import uan.edu.co.crazy_bakery.application.dto.responses.geografia.CiudadDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.geografia.DepartamentoDTO;
 
@@ -13,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
+@ActiveProfiles("test")
 class ColombiaApiClientImplTest {
 
     @Autowired

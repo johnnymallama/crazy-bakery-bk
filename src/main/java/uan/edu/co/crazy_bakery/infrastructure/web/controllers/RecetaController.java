@@ -24,7 +24,11 @@ public class RecetaController {
 
     @GetMapping("/{id}")
     public ResponseEntity<RecetaDTO> obtenerRecetaPorId(@PathVariable Long id) {
-        RecetaDTO receta = recetaService.obtenerRecetaPorId(id);
-        return ResponseEntity.ok(receta);
+        try {
+            RecetaDTO receta = recetaService.obtenerRecetaPorId(id);
+            return ResponseEntity.ok(receta);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 }
