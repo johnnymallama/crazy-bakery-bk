@@ -103,3 +103,19 @@ CREATE TABLE orden_receta (
     CONSTRAINT fk_orden_receta_orden FOREIGN KEY (orden_id) REFERENCES orden (id),
     CONSTRAINT fk_orden_receta_receta FOREIGN KEY (receta_id) REFERENCES receta (id)
 );
+
+CREATE VIEW ingredientes_costos AS (
+	SELECT
+		c.tipo_receta					as tipo_receta,
+		c.id							AS tamano_id,
+		c.nombre						as tamano_nombre,
+		c.tiempo						AS tamano_tiempo,
+		a.tipo_ingrediente				AS tipo_ingrediente,
+		a.id							AS ingrediente_id,
+		a.nombre						AS ingrediente_nombre,
+		(a.costo_por_gramo * b.gramos)	AS ingrediente_costo_total
+	FROM ingrediente a
+	INNER JOIN tamano_tipo_ingrediente b ON a.tipo_ingrediente = b.tipo_ingrediente
+	INNER JOIN tamano c ON c.id = b.tamano_id
+	WHERE a.estado = TRUE AND c.estado = TRUE
+);
