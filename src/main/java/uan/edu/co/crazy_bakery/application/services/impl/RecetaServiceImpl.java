@@ -1,23 +1,37 @@
 package uan.edu.co.crazy_bakery.application.services.impl;
 
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearRecetaDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.RecetaDTO;
 import uan.edu.co.crazy_bakery.application.mappers.RecetaMapper;
 import uan.edu.co.crazy_bakery.application.services.RecetaService;
 import uan.edu.co.crazy_bakery.domain.model.Receta;
+import uan.edu.co.crazy_bakery.domain.model.Tamano;
 import uan.edu.co.crazy_bakery.domain.model.Torta;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.RecetaRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.TortaRepository;
 
 @Service
-@AllArgsConstructor
 public class RecetaServiceImpl implements RecetaService {
 
     private final RecetaRepository recetaRepository;
     private final TortaRepository tortaRepository;
     private final RecetaMapper recetaMapper;
+    private final int costoManoObra;
+    private final int costoOperativo;
+
+    public RecetaServiceImpl(RecetaRepository recetaRepository,
+                             TortaRepository tortaRepository,
+                             RecetaMapper recetaMapper,
+                             @Value("${cost.labor.value}") int costoManoObra,
+                             @Value("${cost.operating.value}") int costoOperativo) {
+        this.recetaRepository = recetaRepository;
+        this.tortaRepository = tortaRepository;
+        this.recetaMapper = recetaMapper;
+        this.costoManoObra = costoManoObra;
+        this.costoOperativo = costoOperativo;
+    }
 
     @Override
     public RecetaDTO crearReceta(CrearRecetaDTO crearRecetaDTO) {
@@ -26,12 +40,8 @@ public class RecetaServiceImpl implements RecetaService {
 
         Receta receta = recetaMapper.crearRecetaDTOToReceta(crearRecetaDTO, torta);
 
-        // Lógica para calcular el valor de la receta
-        float valorReceta = torta.getValor() * receta.getCantidad();
-        receta.setCostoTotal(valorReceta);
+        calcularCosto(torta, receta);
         receta.setEstado(true);
-
-        // Los campos 'prompt' y 'imagenUrl' ya vienen en el DTO y son mapeados por el mapper
 
         Receta recetaGuardada = recetaRepository.save(receta);
 
@@ -43,5 +53,14 @@ public class RecetaServiceImpl implements RecetaService {
         Receta receta = recetaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Receta no encontrada con id: " + id));
         return recetaMapper.recetaToRecetaDTO(receta);
+    }
+
+    private void calcularCosto(Torta torta, Receta receta) {
+        Tamano tamano = torta.getTamano();
+        float tiempoTamano = tamano.getTiempo();
+        float costoManoObraTamano = this.costoManoObra * tiempoTamano;
+        receta.setCostoManoObra(costoManoObraTamano);
+        float costoOperativoTamano = this.costoOperativo * tiempoTamano;
+        receta.setCostoOperativo(costoOperativoTamano);
     }
 }

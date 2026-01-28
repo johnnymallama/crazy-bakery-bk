@@ -85,7 +85,8 @@ class RecetaRepositoryTest {
         Receta receta = new Receta();
         receta.setTorta(torta);
         receta.setCantidad(2);
-        receta.setCostoTotal(torta.getValor() * 2);
+        receta.setCostoManoObra(100f);
+        receta.setCostoOperativo(200f);
         receta.setEstado(true);
         receta.setTipoReceta(TipoReceta.TORTA);
 
@@ -98,7 +99,8 @@ class RecetaRepositoryTest {
         Receta foundReceta = foundRecetaOpt.get();
         assertEquals(torta.getId(), foundReceta.getTorta().getId());
         assertEquals(2, foundReceta.getCantidad());
-        assertEquals(200000f, foundReceta.getCostoTotal());
+        assertEquals(100f, foundReceta.getCostoManoObra());
+        assertEquals(200f, foundReceta.getCostoOperativo());
         assertTrue(foundReceta.isEstado());
     }
 }

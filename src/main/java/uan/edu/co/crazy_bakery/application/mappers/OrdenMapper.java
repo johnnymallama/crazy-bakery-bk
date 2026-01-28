@@ -18,5 +18,6 @@ public interface OrdenMapper {
     @Mapping(target = "recetas", ignore = true)
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "valorTotal", ignore = true)
+    @Mapping(target = "ganancia", ignore = true)
     Orden toEntity(CrearOrdenDTO crearOrdenDTO);
 }

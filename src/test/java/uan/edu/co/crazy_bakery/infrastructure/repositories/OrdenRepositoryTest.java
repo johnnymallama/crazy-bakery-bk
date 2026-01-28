@@ -116,7 +116,8 @@ class OrdenRepositoryTest {
         Receta receta = new Receta();
         receta.setTorta(torta);
         receta.setCantidad(1);
-        receta.setCostoTotal(150.0f);
+        receta.setCostoManoObra(100.0f);
+        receta.setCostoOperativo(200.0f);
         receta.setEstado(true);
         receta.setTipoReceta(TipoReceta.TORTA);
         entityManager.persist(receta);

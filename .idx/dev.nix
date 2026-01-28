@@ -11,6 +11,9 @@
   # Sets environment variables in the workspace
   env = {
     JAVA_HOME = "${pkgs.zulu21}";
+    LABOR_COST = "15000";
+    OPERATING_COST = "7000";
+    BENEFIT_PERCENTAGE = "30";
   };
   idx = {
     # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"

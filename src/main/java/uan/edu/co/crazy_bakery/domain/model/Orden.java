@@ -47,6 +47,20 @@ public class Orden {
     @Column(nullable = false)
     private EstadoOrden estado;
 
+    @Builder.Default
     @Column(name = "valor_total", nullable = false)
-    private float valorTotal;
+    private float valorTotal = 0f;
+
+    @Builder.Default
+    @Column(name = "ganancia", nullable = false)
+    private float ganancia = 0f;
+
+    public void setGanancia(float gananciaInput) {
+        this.ganancia = this.ganancia + gananciaInput;
+    }
+
+    public void setValorTotal(float valorTotalInput) {
+        this.valorTotal = this.valorTotal + valorTotalInput;
+    }
+
 }

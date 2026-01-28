@@ -1,6 +1,6 @@
 package uan.edu.co.crazy_bakery.application.services.impl;
 
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearOrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.OrdenDTO;
@@ -20,14 +20,28 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static uan.edu.co.crazy_bakery.domain.enums.EstadoOrden.CREADO;
+
 @Service
-@AllArgsConstructor
 public class OrdenServiceImpl implements OrdenService {
 
     private final OrdenRepository ordenRepository;
     private final UsuarioRepository usuarioRepository;
     private final RecetaRepository recetaRepository;
     private final OrdenMapper ordenMapper;
+    private final int gananciaPorcentaje;
+
+    public OrdenServiceImpl(OrdenRepository ordenRepository,
+                            UsuarioRepository usuarioRepository,
+                            RecetaRepository recetaRepository,
+                            OrdenMapper ordenMapper,
+                            @Value("${cost.benefit.percentage}") int gananciaPorcentaje) {
+        this.ordenRepository = ordenRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.recetaRepository = recetaRepository;
+        this.ordenMapper = ordenMapper;
+        this.gananciaPorcentaje = gananciaPorcentaje;
+    }
 
     @Override
     public List<OrdenDTO> getAllOrdenes() {
@@ -80,14 +94,12 @@ public class OrdenServiceImpl implements OrdenService {
             throw new RuntimeException("Una o más recetas no fueron encontradas");
         }
 
-        float valorTotal = (float) recetas.stream().mapToDouble(Receta::getCostoTotal).sum();
-
         Orden orden = ordenMapper.toEntity(crearOrdenDTO);
         orden.setUsuario(usuario);
         orden.setRecetas(recetas);
         orden.setFecha(new Date());
-        orden.setValorTotal(valorTotal);
-        orden.setEstado(uan.edu.co.crazy_bakery.domain.enums.EstadoOrden.CREADO);
+        orden.setEstado(CREADO);
+        recetas.forEach(receta -> this.calculatTotal(orden, receta));
 
         return ordenMapper.toDto(ordenRepository.save(orden));
     }
@@ -131,11 +143,24 @@ public class OrdenServiceImpl implements OrdenService {
         }
 
         orden.getRecetas().add(receta);
-        float nuevoValorTotal = (float) orden.getRecetas().stream().mapToDouble(Receta::getCostoTotal).sum();
-        orden.setValorTotal(nuevoValorTotal);
+        this.calculatTotal(orden, receta);
 
         Orden ordenActualizada = ordenRepository.save(orden);
 
         return ordenMapper.toDto(ordenActualizada);
+    }
+
+    private void calculatTotal(Orden orden, Receta receta){
+        float valorTorta = receta.getTorta().getValor();
+        float totalReceta = receta.getCantidad() * (receta.getCostoManoObra() + receta.getCostoOperativo());
+        float costoTotalProducto = totalReceta + valorTorta;
+
+        float gananciaTotal = (costoTotalProducto * gananciaPorcentaje)/100;
+
+        float valorTotal = costoTotalProducto + gananciaTotal;
+
+        orden.setGanancia(gananciaTotal);
+
+        orden.setValorTotal(valorTotal);
     }
 }

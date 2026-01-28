@@ -15,7 +15,6 @@ public class RecetaDTO {
     private TipoReceta tipoReceta;
     private TortaDTO torta;
     private int cantidad;
-    private float costoTotal;
     private boolean estado;
     private String prompt;
     private String imagenUrl;

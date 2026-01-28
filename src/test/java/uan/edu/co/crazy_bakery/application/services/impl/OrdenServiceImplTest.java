@@ -2,7 +2,6 @@ package uan.edu.co.crazy_bakery.application.services.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearOrdenDTO;
@@ -11,6 +10,7 @@ import uan.edu.co.crazy_bakery.application.mappers.OrdenMapper;
 import uan.edu.co.crazy_bakery.domain.enums.EstadoOrden;
 import uan.edu.co.crazy_bakery.domain.model.Orden;
 import uan.edu.co.crazy_bakery.domain.model.Receta;
+import uan.edu.co.crazy_bakery.domain.model.Torta;
 import uan.edu.co.crazy_bakery.domain.model.Usuario;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.OrdenRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.RecetaRepository;
@@ -40,22 +40,28 @@ class OrdenServiceImplTest {
     @Mock
     private OrdenMapper ordenMapper;
 
-    @InjectMocks
     private OrdenServiceImpl ordenService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        ordenService = new OrdenServiceImpl(ordenRepository, usuarioRepository, recetaRepository, ordenMapper, 10);
     }
 
     @Test
     void testCreateOrden() {
         CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO("1", List.of(1L), List.of("Nota 1"));
         Usuario usuario = new Usuario();
+        Torta torta = new Torta();
+        torta.setValor(10.0f);
         Receta receta = new Receta();
-        receta.setCostoTotal(10.0f);
+        receta.setTorta(torta);
+        receta.setCostoManoObra(10.0f);
+        receta.setCostoOperativo(20.0f);
+        receta.setCantidad(1);
         Orden orden = new Orden();
         OrdenDTO ordenDTO = new OrdenDTO();
+        ordenDTO.setValorTotal(44.0f);
 
         when(usuarioRepository.findById("1")).thenReturn(Optional.of(usuario));
         when(recetaRepository.findAllById(List.of(1L))).thenReturn(List.of(receta));
@@ -66,6 +72,7 @@ class OrdenServiceImplTest {
         OrdenDTO result = ordenService.createOrden(crearOrdenDTO);
 
         assertNotNull(result);
+        assertEquals(44.0f, result.getValorTotal());
     }
 
     @Test
@@ -156,13 +163,19 @@ class OrdenServiceImplTest {
         orden.setRecetas(new ArrayList<>());
         orden.setValorTotal(50.0f);
 
+        Torta torta = new Torta();
+        torta.setValor(10.0f);
+
         Receta receta = new Receta();
         receta.setId(recetaId);
-        receta.setCostoTotal(25.0f);
+        receta.setCostoManoObra(10.0f);
+        receta.setCostoOperativo(20.0f);
+        receta.setCantidad(1);
+        receta.setTorta(torta);
 
         OrdenDTO ordenDTO = new OrdenDTO();
         ordenDTO.setId(ordenId);
-        ordenDTO.setValorTotal(75.0f);
+        ordenDTO.setValorTotal(44.0f);
 
         when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(orden));
         when(recetaRepository.findById(recetaId)).thenReturn(Optional.of(receta));
@@ -172,7 +185,7 @@ class OrdenServiceImplTest {
         OrdenDTO result = ordenService.agregarRecetaOrden(ordenId, recetaId);
 
         assertNotNull(result);
-        assertEquals(75.0f, result.getValorTotal());
+        assertEquals(44.0f, result.getValorTotal());
         verify(ordenRepository).save(orden);
     }
 }

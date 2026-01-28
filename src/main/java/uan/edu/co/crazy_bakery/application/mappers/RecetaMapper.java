@@ -18,8 +18,7 @@ public interface RecetaMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "torta", source = "torta")
     @Mapping(target = "estado", ignore = true)
-    @Mapping(target = "costoTotal", ignore = true) // El valor se calculará en el servicio
-    @Mapping(target = "prompt", ignore = true)
-    @Mapping(target = "imagenUrl", ignore = true)
+    @Mapping(target = "costoManoObra", ignore = true)
+    @Mapping(target = "costoOperativo", ignore = true)
     Receta crearRecetaDTOToReceta(CrearRecetaDTO crearRecetaDTO, Torta torta);
 }

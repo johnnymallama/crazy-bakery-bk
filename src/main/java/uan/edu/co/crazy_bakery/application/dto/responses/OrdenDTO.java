@@ -22,4 +22,5 @@ public class OrdenDTO {
     private List<String> notas;
     private EstadoOrden estado;
     private float valorTotal;
+    private float ganancia;
 }

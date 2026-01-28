@@ -28,9 +28,6 @@ public class Receta {
     @Column(nullable = false)
     private int cantidad;
 
-    @Column(nullable = false)
-    private float costoTotal;
-
     @Column(nullable = true)
     private String prompt;
 
@@ -39,4 +36,10 @@ public class Receta {
 
     @Column(nullable = false)
     private boolean estado = true;
+
+    @Column(nullable = false, name = "costo_mano_obra")
+    private float costoManoObra;
+
+    @Column(nullable = false, name = "costo_operativo")
+    private float costoOperativo;
 }

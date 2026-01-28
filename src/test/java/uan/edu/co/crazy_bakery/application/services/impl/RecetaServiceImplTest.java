@@ -2,7 +2,6 @@ package uan.edu.co.crazy_bakery.application.services.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearRecetaDTO;
@@ -12,6 +11,7 @@ import uan.edu.co.crazy_bakery.application.mappers.RecetaMapper;
 import uan.edu.co.crazy_bakery.domain.model.Receta;
 import uan.edu.co.crazy_bakery.domain.model.Torta;
 import uan.edu.co.crazy_bakery.domain.enums.TipoReceta;
+import uan.edu.co.crazy_bakery.domain.model.Tamano;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.RecetaRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.TortaRepository;
 
@@ -32,12 +32,12 @@ class RecetaServiceImplTest {
     @Mock
     private RecetaMapper recetaMapper;
 
-    @InjectMocks
     private RecetaServiceImpl recetaService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        recetaService = new RecetaServiceImpl(recetaRepository, tortaRepository, recetaMapper, 10, 10);
     }
 
     @Test
@@ -54,6 +54,9 @@ class RecetaServiceImplTest {
         Torta torta = new Torta();
         torta.setId(tortaId);
         torta.setValor(50.0f);
+        Tamano tamano = new Tamano();
+        tamano.setTiempo(1.5f);
+        torta.setTamano(tamano);
 
         Receta receta = new Receta();
         receta.setTorta(torta);
@@ -66,7 +69,8 @@ class RecetaServiceImplTest {
         recetaGuardada.setId(1L);
         recetaGuardada.setTorta(torta);
         recetaGuardada.setCantidad(2);
-        recetaGuardada.setCostoTotal(100.0f);
+        recetaGuardada.setCostoManoObra(15.0f);
+        recetaGuardada.setCostoOperativo(15.0f);
         recetaGuardada.setEstado(true);
         recetaGuardada.setPrompt("a delicious chocolate cake");
         recetaGuardada.setImagenUrl("http://example.com/cake.png");
@@ -75,7 +79,6 @@ class RecetaServiceImplTest {
         expectedDto.setId(1L);
         expectedDto.setTorta(new TortaDTO());
         expectedDto.setCantidad(2);
-        expectedDto.setCostoTotal(100.0f);
         expectedDto.setEstado(true);
         expectedDto.setPrompt("a delicious chocolate cake");
         expectedDto.setImagenUrl("http://example.com/cake.png");
@@ -93,8 +96,9 @@ class RecetaServiceImplTest {
         assertEquals(expectedDto.getId(), result.getId());
         assertEquals(expectedDto.getPrompt(), result.getPrompt());
         assertEquals(expectedDto.getImagenUrl(), result.getImagenUrl());
-        assertEquals(100.0f, result.getCostoTotal());
         assertTrue(result.isEstado());
+        assertEquals(15.0f, receta.getCostoManoObra());
+        assertEquals(15.0f, receta.getCostoOperativo());
 
         verify(tortaRepository, times(1)).findById(tortaId);
         verify(recetaRepository, times(1)).save(any(Receta.class));
