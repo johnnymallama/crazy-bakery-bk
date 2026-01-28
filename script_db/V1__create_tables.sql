@@ -32,6 +32,7 @@ CREATE TABLE tamano (
     porciones INT NOT NULL,
     tipo_receta VARCHAR(255) NOT NULL,
     estado BOOLEAN NOT NULL DEFAULT TRUE,
+    tiempo FLOAT NOT NULL,
     CONSTRAINT pk_tamano PRIMARY KEY (id)
 );
 

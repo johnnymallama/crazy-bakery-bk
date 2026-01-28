@@ -35,4 +35,7 @@ public class Tamano {
 
     @Column(nullable = false)
     private boolean estado = true;
+
+    @Column(nullable = false)
+    private float tiempo;
 }

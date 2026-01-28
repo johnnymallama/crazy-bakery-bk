@@ -41,9 +41,9 @@ class TamanoServiceImplTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        crearTamanoDTO = new CrearTamanoDTO("Personal", 10, 15, 8, TipoReceta.TORTA);
+        crearTamanoDTO = new CrearTamanoDTO("Personal", 10, 15, 8, TipoReceta.TORTA, 1.5F);
 
-        actualizarTamanoDTO = new ActualizarTamanoDTO(12, 18, 10);
+        actualizarTamanoDTO = new ActualizarTamanoDTO(12, 18, 10, 1.5F);
 
         tamano = new Tamano();
         tamano.setId(1L);

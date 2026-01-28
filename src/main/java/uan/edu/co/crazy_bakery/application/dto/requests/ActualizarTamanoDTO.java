@@ -12,4 +12,5 @@ public class ActualizarTamanoDTO {
     private int alto;
     private int diametro;
     private int porciones;
+    private float tiempo;
 }

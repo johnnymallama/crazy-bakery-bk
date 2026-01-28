@@ -21,4 +21,5 @@ public class TamanoDTO {
     private TipoReceta tipoReceta;
 
     private boolean estado;
+    private float tiempo;
 }

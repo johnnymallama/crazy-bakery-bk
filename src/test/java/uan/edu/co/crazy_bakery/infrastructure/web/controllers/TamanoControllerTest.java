@@ -41,8 +41,8 @@ class TamanoControllerTest {
         tamanoDTO.setId(1L);
         tamanoDTO.setNombre("Personal");
 
-        crearTamanoDTO = new CrearTamanoDTO("Personal", 10, 15, 8, TipoReceta.TORTA);
-        actualizarTamanoDTO = new ActualizarTamanoDTO(12, 18, 10);
+        crearTamanoDTO = new CrearTamanoDTO("Personal", 10, 15, 8, TipoReceta.TORTA, 1.0F);
+        actualizarTamanoDTO = new ActualizarTamanoDTO(12, 18, 10, 1.0F);
     }
 
     @Test

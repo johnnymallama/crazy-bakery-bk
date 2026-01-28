@@ -15,7 +15,7 @@ public class CrearTamanoDTO {
     private int alto;
     private int diametro;
     private int porciones;
-
     @JsonProperty("tipo_receta")
     private TipoReceta tipoReceta;
+    private float tiempo;
 }

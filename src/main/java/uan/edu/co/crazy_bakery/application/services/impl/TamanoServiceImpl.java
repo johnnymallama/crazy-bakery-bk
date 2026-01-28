@@ -48,6 +48,7 @@ public class TamanoServiceImpl implements TamanoService {
         tamano.setAlto(actualizarTamanoDTO.getAlto());
         tamano.setDiametro(actualizarTamanoDTO.getDiametro());
         tamano.setPorciones(actualizarTamanoDTO.getPorciones());
+        tamano.setTiempo(actualizarTamanoDTO.getTiempo());
         Tamano tamanoActualizado = tamanoRepository.save(tamano);
         return tamanoMapper.tamanoToTamanoDTO(tamanoActualizado);
     }
