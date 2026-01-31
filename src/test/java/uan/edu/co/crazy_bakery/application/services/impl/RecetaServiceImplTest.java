@@ -8,6 +8,7 @@ import uan.edu.co.crazy_bakery.application.dto.requests.CrearRecetaDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.RecetaDTO;
 import uan.edu.co.crazy_bakery.application.dto.torta.TortaDTO;
 import uan.edu.co.crazy_bakery.application.mappers.RecetaMapper;
+import uan.edu.co.crazy_bakery.application.services.storage.StorageService;
 import uan.edu.co.crazy_bakery.domain.model.Receta;
 import uan.edu.co.crazy_bakery.domain.model.Torta;
 import uan.edu.co.crazy_bakery.domain.enums.TipoReceta;
@@ -15,10 +16,12 @@ import uan.edu.co.crazy_bakery.domain.model.Tamano;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.RecetaRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.TortaRepository;
 
+import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 class RecetaServiceImplTest {
@@ -32,24 +35,30 @@ class RecetaServiceImplTest {
     @Mock
     private RecetaMapper recetaMapper;
 
+    @Mock
+    private StorageService storageService;
+
     private RecetaServiceImpl recetaService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        recetaService = new RecetaServiceImpl(recetaRepository, tortaRepository, recetaMapper, 10, 10);
+        recetaService = new RecetaServiceImpl(recetaRepository, tortaRepository, recetaMapper, storageService, 10, 10);
     }
 
     @Test
-    void testCrearReceta() {
+    void testCrearReceta() throws IOException {
         // Arrange
         long tortaId = 1L;
+        String originalUrl = "http://example.com/cake.png";
+        String firebaseUrl = "http://firebase-storage.com/receta-123.jpg";
+
         CrearRecetaDTO crearRecetaDTO = new CrearRecetaDTO();
         crearRecetaDTO.setTortaId(tortaId);
         crearRecetaDTO.setCantidad(2);
         crearRecetaDTO.setTipoReceta(TipoReceta.TORTA);
         crearRecetaDTO.setPrompt("a delicious chocolate cake");
-        crearRecetaDTO.setImagenUrl("http://example.com/cake.png");
+        crearRecetaDTO.setImagenUrl(originalUrl);
 
         Torta torta = new Torta();
         torta.setId(tortaId);
@@ -63,7 +72,7 @@ class RecetaServiceImplTest {
         receta.setCantidad(crearRecetaDTO.getCantidad());
         receta.setTipoReceta(crearRecetaDTO.getTipoReceta());
         receta.setPrompt(crearRecetaDTO.getPrompt());
-        receta.setImagenUrl(crearRecetaDTO.getImagenUrl());
+        receta.setImagenUrl(originalUrl); // Initially has the original URL
 
         Receta recetaGuardada = new Receta();
         recetaGuardada.setId(1L);
@@ -73,7 +82,7 @@ class RecetaServiceImplTest {
         recetaGuardada.setCostoOperativo(15.0f);
         recetaGuardada.setEstado(true);
         recetaGuardada.setPrompt("a delicious chocolate cake");
-        recetaGuardada.setImagenUrl("http://example.com/cake.png");
+        recetaGuardada.setImagenUrl(firebaseUrl); // The saved one has the new URL
 
         RecetaDTO expectedDto = new RecetaDTO();
         expectedDto.setId(1L);
@@ -81,10 +90,11 @@ class RecetaServiceImplTest {
         expectedDto.setCantidad(2);
         expectedDto.setEstado(true);
         expectedDto.setPrompt("a delicious chocolate cake");
-        expectedDto.setImagenUrl("http://example.com/cake.png");
+        expectedDto.setImagenUrl(firebaseUrl); // The final DTO has the new URL
 
         when(tortaRepository.findById(tortaId)).thenReturn(Optional.of(torta));
         when(recetaMapper.crearRecetaDTOToReceta(crearRecetaDTO, torta)).thenReturn(receta);
+        when(storageService.uploadFileFromUrl(eq(originalUrl), anyString())).thenReturn(firebaseUrl);
         when(recetaRepository.save(any(Receta.class))).thenReturn(recetaGuardada);
         when(recetaMapper.recetaToRecetaDTO(recetaGuardada)).thenReturn(expectedDto);
 
@@ -95,12 +105,13 @@ class RecetaServiceImplTest {
         assertNotNull(result);
         assertEquals(expectedDto.getId(), result.getId());
         assertEquals(expectedDto.getPrompt(), result.getPrompt());
-        assertEquals(expectedDto.getImagenUrl(), result.getImagenUrl());
+        assertEquals(firebaseUrl, result.getImagenUrl()); // Check for the firebase URL
         assertTrue(result.isEstado());
         assertEquals(15.0f, receta.getCostoManoObra());
         assertEquals(15.0f, receta.getCostoOperativo());
 
         verify(tortaRepository, times(1)).findById(tortaId);
+        verify(storageService, times(1)).uploadFileFromUrl(eq(originalUrl), anyString());
         verify(recetaRepository, times(1)).save(any(Receta.class));
         verify(recetaMapper, times(1)).crearRecetaDTOToReceta(crearRecetaDTO, torta);
         verify(recetaMapper, times(1)).recetaToRecetaDTO(recetaGuardada);

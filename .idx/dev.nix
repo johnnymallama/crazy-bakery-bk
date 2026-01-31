@@ -14,6 +14,7 @@
     LABOR_COST = "15000";
     OPERATING_COST = "7000";
     BENEFIT_PERCENTAGE = "30";
+    GOOGLE_APPLICATION_CREDENTIALS = "/home/user/crazy-bakery-bk/credentials/uan-especializacion-firebase-adminsdk-fbsvc-c89407ed83.json";
   };
   idx = {
     # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
