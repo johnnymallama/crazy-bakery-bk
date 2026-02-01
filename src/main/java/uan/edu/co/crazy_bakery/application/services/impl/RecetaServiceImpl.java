@@ -14,6 +14,7 @@ import uan.edu.co.crazy_bakery.infrastructure.repositories.RecetaRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.TortaRepository;
 
 import java.io.IOException;
+import java.util.List;
 
 @Service
 public class RecetaServiceImpl implements RecetaService {
@@ -76,6 +77,11 @@ public class RecetaServiceImpl implements RecetaService {
         Receta receta = recetaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Receta no encontrada con id: " + id));
         return recetaMapper.recetaToRecetaDTO(receta);
+    }
+
+    @Override
+    public List<String> getUltimasImagenes() {
+        return recetaRepository.findUltimasImagenes();
     }
 
     private void calcularCosto(Torta torta, Receta receta) {

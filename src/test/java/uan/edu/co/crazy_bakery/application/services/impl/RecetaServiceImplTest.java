@@ -17,6 +17,8 @@ import uan.edu.co.crazy_bakery.infrastructure.repositories.RecetaRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.TortaRepository;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,6 +46,25 @@ class RecetaServiceImplTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         recetaService = new RecetaServiceImpl(recetaRepository, tortaRepository, recetaMapper, storageService, 10, 10);
+    }
+
+    @Test
+    void testGetUltimasImagenes() {
+        // Arrange
+        List<String> expectedUrls = Arrays.asList(
+            "http://example.com/img1.jpg",
+            "http://example.com/img2.jpg"
+        );
+        when(recetaRepository.findUltimasImagenes()).thenReturn(expectedUrls);
+
+        // Act
+        List<String> result = recetaService.getUltimasImagenes();
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(expectedUrls, result);
+        verify(recetaRepository, times(1)).findUltimasImagenes();
     }
 
     @Test

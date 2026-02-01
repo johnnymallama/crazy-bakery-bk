@@ -1,36 +1,59 @@
 package uan.edu.co.crazy_bakery.infrastructure.web.controllers;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearRecetaDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.RecetaDTO;
 import uan.edu.co.crazy_bakery.application.services.RecetaService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoReceta;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import java.util.Arrays;
+import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(controllers = RecetaController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class})
 class RecetaControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private RecetaService recetaService;
 
-    @InjectMocks
-    private RecetaController recetaController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
+    @Test
+    void getUltimasImagenes_shouldReturnListOfUrls() throws Exception {
+        // Arrange
+        List<String> imageUrls = Arrays.asList(
+            "https://firebasestorage.googleapis.com/v0/b/crazy-bakery.appspot.com/o/receta-1698114435222.jpg?alt=media",
+            "https://firebasestorage.googleapis.com/v0/b/crazy-bakery.appspot.com/o/receta-1698114468611.jpg?alt=media"
+        );
+        when(recetaService.getUltimasImagenes()).thenReturn(imageUrls);
+
+        // Act & Assert
+        mockMvc.perform(get("/receta/ultimas-imagenes"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0]").value(imageUrls.get(0)))
+                .andExpect(jsonPath("$[1]").value(imageUrls.get(1)));
     }
 
     @Test
-    void crearReceta_withValidRequest_shouldReturnCreated() {
+    void crearReceta_withValidRequest_shouldReturnCreated() throws Exception {
         // Arrange
         CrearRecetaDTO crearRecetaDTO = new CrearRecetaDTO();
         crearRecetaDTO.setTortaId(1L);
@@ -42,54 +65,42 @@ class RecetaControllerTest {
         RecetaDTO recetaDTO = new RecetaDTO();
         recetaDTO.setId(1L);
         recetaDTO.setPrompt("A test prompt");
-        recetaDTO.setImagenUrl("http://example.com/image.png");
 
         when(recetaService.crearReceta(any(CrearRecetaDTO.class))).thenReturn(recetaDTO);
 
-        // Act
-        ResponseEntity<RecetaDTO> response = recetaController.crearReceta(crearRecetaDTO);
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(1L, response.getBody().getId());
-        assertEquals("A test prompt", response.getBody().getPrompt());
+        // Act & Assert
+        mockMvc.perform(post("/receta")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(crearRecetaDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.prompt").value("A test prompt"));
     }
 
     @Test
-    void obtenerRecetaPorId_whenRecetaExists_shouldReturnReceta() {
+    void obtenerRecetaPorId_whenRecetaExists_shouldReturnReceta() throws Exception {
         // Arrange
         long recetaId = 1L;
         RecetaDTO recetaDTO = new RecetaDTO();
         recetaDTO.setId(recetaId);
-        recetaDTO.setPrompt("A test prompt for existing recipe");
-        recetaDTO.setImagenUrl("http://example.com/existing.png");
 
         when(recetaService.obtenerRecetaPorId(recetaId)).thenReturn(recetaDTO);
 
-        // Act
-        ResponseEntity<RecetaDTO> response = recetaController.obtenerRecetaPorId(recetaId);
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(recetaId, response.getBody().getId());
+        // Act & Assert
+        mockMvc.perform(get("/receta/{id}", recetaId))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(recetaId));
     }
 
     @Test
-    void obtenerRecetaPorId_whenRecetaNotFound_shouldReturnNotFound() {
+    void obtenerRecetaPorId_whenRecetaNotFound_shouldReturnNotFound() throws Exception {
         // Arrange
         long recetaId = 2L;
-        when(recetaService.obtenerRecetaPorId(recetaId)).thenThrow(new RuntimeException("Receta no encontrada"));
+        when(recetaService.obtenerRecetaPorId(anyLong())).thenThrow(new RuntimeException("Receta no encontrada"));
 
-        // Act
-        ResponseEntity<RecetaDTO> response = recetaController.obtenerRecetaPorId(recetaId);
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNull(response.getBody());
+        // Act & Assert
+        mockMvc.perform(get("/receta/{id}", recetaId))
+                .andExpect(status().isNotFound());
     }
 }
