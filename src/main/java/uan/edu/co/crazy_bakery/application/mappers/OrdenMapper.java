@@ -6,10 +6,9 @@ import uan.edu.co.crazy_bakery.application.dto.requests.CrearOrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.OrdenDTO;
 import uan.edu.co.crazy_bakery.domain.model.Orden;
 
-@Mapper(componentModel = "spring", uses = {RecetaMapper.class})
+@Mapper(componentModel = "spring", uses = {RecetaMapper.class, UsuarioMapper.class})
 public interface OrdenMapper {
 
-    @Mapping(source = "usuario.id", target = "usuarioId")
     OrdenDTO toDto(Orden orden);
 
     @Mapping(target = "id", ignore = true)

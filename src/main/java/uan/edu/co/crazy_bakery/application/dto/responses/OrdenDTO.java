@@ -17,7 +17,7 @@ public class OrdenDTO {
 
     private Long id;
     private Date fecha;
-    private String usuarioId;
+    private UsuarioDTO usuario;
     private List<RecetaDTO> recetas;
     private List<String> notas;
     private EstadoOrden estado;
