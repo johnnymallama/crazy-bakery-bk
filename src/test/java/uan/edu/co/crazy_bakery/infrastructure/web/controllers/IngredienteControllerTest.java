@@ -7,12 +7,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteDTO;
 import uan.edu.co.crazy_bakery.application.services.IngredienteService;
+import uan.edu.co.crazy_bakery.application.services.OpenAITranslationService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
+import uan.edu.co.crazy_bakery.infrastructure.web.config.TranslationResponseBodyAdvice;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = IngredienteController.class, excludeAutoConfiguration = {SecurityAutoConfiguration.class})
+@Import(TranslationResponseBodyAdvice.class)
 class IngredienteControllerTest {
 
     @Autowired
@@ -32,6 +36,9 @@ class IngredienteControllerTest {
 
     @MockBean
     private IngredienteService ingredienteService;
+
+    @MockBean
+    private OpenAITranslationService openAITranslationService;
 
     @Autowired
     private ObjectMapper objectMapper;
