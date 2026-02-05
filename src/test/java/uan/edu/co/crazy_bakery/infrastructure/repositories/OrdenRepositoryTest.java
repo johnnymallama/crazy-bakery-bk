@@ -74,13 +74,18 @@ class OrdenRepositoryTest {
         Orden savedOrden = entityManager.persistFlushFind(orden);
 
         // when
-        savedOrden.getNotas().add("Nueva nota de prueba");
+        Nota nuevaNota = new Nota();
+        nuevaNota.setNota("Nueva nota de prueba");
+        nuevaNota.setUsuario(usuario);
+        nuevaNota.setOrden(savedOrden);
+
+        savedOrden.getNotas().add(nuevaNota);
         ordenRepository.save(savedOrden);
 
         // then
         Orden foundOrden = entityManager.find(Orden.class, savedOrden.getId());
         assertThat(foundOrden.getNotas()).hasSize(1);
-        assertThat(foundOrden.getNotas().get(0)).isEqualTo("Nueva nota de prueba");
+        assertThat(foundOrden.getNotas().get(0).getNota()).isEqualTo("Nueva nota de prueba");
     }
 
     @Test

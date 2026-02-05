@@ -166,7 +166,8 @@ class OrdenControllerTest {
         agregarNotaOrdenDTO.setNota("Test nota");
         OrdenDTO ordenDTO = createOrdenDTO(ordenId, usuarioDTO);
 
-        when(ordenService.agregarNotaOrden(eq(ordenId), any(String.class))).thenReturn(ordenDTO);
+        // Corrección: usar any(AgregarNotaOrdenDTO.class) en lugar de any(String.class)
+        when(ordenService.agregarNotaOrden(eq(ordenId), any(AgregarNotaOrdenDTO.class))).thenReturn(ordenDTO);
 
         ResponseEntity<OrdenDTO> response = ordenController.agregarNotaOrden(ordenId, agregarNotaOrdenDTO);
 

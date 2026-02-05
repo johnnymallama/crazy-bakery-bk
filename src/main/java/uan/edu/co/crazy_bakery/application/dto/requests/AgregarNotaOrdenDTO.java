@@ -8,4 +8,7 @@ public class AgregarNotaOrdenDTO {
 
     @NotBlank(message = "La nota no puede estar vacía")
     private String nota;
+
+    @NotBlank(message = "El id del usuario no puede estar vacío")
+    private String usuarioId;
 }

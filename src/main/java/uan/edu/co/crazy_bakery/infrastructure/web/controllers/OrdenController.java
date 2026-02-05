@@ -68,7 +68,7 @@ public class OrdenController {
     public ResponseEntity<OrdenDTO> agregarNotaOrden(
             @PathVariable Long id,
             @Valid @RequestBody AgregarNotaOrdenDTO agregarNotaOrdenDTO) {
-        OrdenDTO ordenActualizada = ordenService.agregarNotaOrden(id, agregarNotaOrdenDTO.getNota());
+        OrdenDTO ordenActualizada = ordenService.agregarNotaOrden(id, agregarNotaOrdenDTO);
         return ResponseEntity.ok(ordenActualizada);
     }
 

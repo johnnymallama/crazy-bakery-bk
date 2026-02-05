@@ -19,7 +19,7 @@ public class OrdenDTO {
     private Date fecha;
     private UsuarioDTO usuario;
     private List<RecetaDTO> recetas;
-    private List<String> notas;
+    private List<NotaDTO> notas;
     private EstadoOrden estado;
     private float valorTotal;
     private float ganancia;

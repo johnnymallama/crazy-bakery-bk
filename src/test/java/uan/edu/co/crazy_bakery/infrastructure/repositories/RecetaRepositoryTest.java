@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import uan.edu.co.crazy_bakery.domain.model.Receta;
 import uan.edu.co.crazy_bakery.domain.model.Torta;
 import uan.edu.co.crazy_bakery.domain.enums.TipoReceta;

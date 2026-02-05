@@ -4,15 +4,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import uan.edu.co.crazy_bakery.application.dto.requests.AgregarNotaOrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearOrdenDTO;
+import uan.edu.co.crazy_bakery.application.dto.responses.NotaDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.OrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.UsuarioDTO;
 import uan.edu.co.crazy_bakery.application.mappers.OrdenMapper;
 import uan.edu.co.crazy_bakery.domain.enums.EstadoOrden;
-import uan.edu.co.crazy_bakery.domain.model.Orden;
-import uan.edu.co.crazy_bakery.domain.model.Receta;
-import uan.edu.co.crazy_bakery.domain.model.Torta;
-import uan.edu.co.crazy_bakery.domain.model.Usuario;
+import uan.edu.co.crazy_bakery.domain.model.*;
+import uan.edu.co.crazy_bakery.infrastructure.repositories.NotaRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.OrdenRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.RecetaRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.UsuarioRepository;
@@ -24,8 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class OrdenServiceImplTest {
 
@@ -39,6 +38,9 @@ class OrdenServiceImplTest {
     private RecetaRepository recetaRepository;
 
     @Mock
+    private NotaRepository notaRepository; // Mock añadido
+
+    @Mock
     private OrdenMapper ordenMapper;
 
     private OrdenServiceImpl ordenService;
@@ -49,9 +51,9 @@ class OrdenServiceImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        ordenService = new OrdenServiceImpl(ordenRepository, usuarioRepository, recetaRepository, ordenMapper, 10);
+        // Constructor actualizado con notaRepository
+        ordenService = new OrdenServiceImpl(ordenRepository, usuarioRepository, recetaRepository, notaRepository, ordenMapper, 10);
 
-        // Common Arrange for user
         usuario = new Usuario();
         usuario.setId("user123");
         usuario.setNombre("Test User");
@@ -66,6 +68,7 @@ class OrdenServiceImplTest {
                 .id(ordenId)
                 .estado(estado)
                 .usuario(usuario)
+                .notas(new ArrayList<>()) // Inicializar lista de notas
                 .build();
     }
 
@@ -81,7 +84,8 @@ class OrdenServiceImplTest {
 
     @Test
     void testCreateOrden() {
-        CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO("user123", List.of(1L), List.of("Nota 1"));
+        // Se elimina la lista de notas de la creación
+        CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO("user123", List.of(1L), null);
         Torta torta = new Torta();
         torta.setValor(10.0f);
         Receta receta = new Receta();
@@ -92,7 +96,6 @@ class OrdenServiceImplTest {
         Orden orden = createOrden(1L, EstadoOrden.CREADO, usuario);
         OrdenDTO ordenDTO = createOrdenDTO(1L, EstadoOrden.CREADO, usuarioDTO);
         ordenDTO.setValorTotal(44.0f);
-
 
         when(usuarioRepository.findById("user123")).thenReturn(Optional.of(usuario));
         when(recetaRepository.findAllById(List.of(1L))).thenReturn(List.of(receta));
@@ -108,6 +111,62 @@ class OrdenServiceImplTest {
         assertEquals("user123", result.getUsuario().getId());
     }
 
+
+    @Test
+    void testAgregarNotaOrden() {
+        // Arrange
+        Long ordenId = 1L;
+        String notaText = "Esta es una nota de prueba.";
+        String userId = "user123";
+
+        AgregarNotaOrdenDTO agregarNotaOrdenDTO = new AgregarNotaOrdenDTO();
+        agregarNotaOrdenDTO.setNota(notaText);
+        agregarNotaOrdenDTO.setUsuarioId(userId);
+
+        Orden ordenInicial = createOrden(ordenId, EstadoOrden.CREADO, usuario);
+
+        Nota nuevaNota = new Nota();
+        nuevaNota.setId(1L);
+        nuevaNota.setNota(notaText);
+        nuevaNota.setUsuario(usuario);
+        nuevaNota.setOrden(ordenInicial);
+
+        // Simular el estado de la orden después de añadir la nota
+        Orden ordenActualizada = createOrden(ordenId, EstadoOrden.CREADO, usuario);
+        ordenActualizada.getNotas().add(nuevaNota);
+
+        NotaDTO notaDTO = NotaDTO.builder().build();
+        notaDTO.setNota(notaText);
+        notaDTO.setUsuarioNombre(usuario.getNombre());
+
+        OrdenDTO ordenDTOFinal = createOrdenDTO(ordenId, EstadoOrden.CREADO, usuarioDTO);
+        ordenDTOFinal.getNotas().add(notaDTO);
+
+        // Act (Mocks)
+        when(ordenRepository.findById(ordenId))
+                .thenReturn(Optional.of(ordenInicial)) // Primera llamada: devuelve la orden sin la nota
+                .thenReturn(Optional.of(ordenActualizada)); // Segunda llamada: devuelve la orden con la nota
+
+        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
+        when(notaRepository.save(any(Nota.class))).thenReturn(nuevaNota);
+        when(ordenMapper.toDto(ordenActualizada)).thenReturn(ordenDTOFinal);
+
+        // Assert
+        OrdenDTO result = ordenService.agregarNotaOrden(ordenId, agregarNotaOrdenDTO);
+
+        assertNotNull(result);
+        assertFalse(result.getNotas().isEmpty());
+        assertEquals(1, result.getNotas().size());
+        assertEquals(notaText, result.getNotas().get(0).getNota());
+        assertEquals(usuario.getNombre(), result.getNotas().get(0).getUsuarioNombre());
+
+        verify(usuarioRepository).findById(userId);
+        verify(notaRepository).save(any(Nota.class));
+        verify(ordenRepository, times(2)).findById(ordenId); // Se llama dos veces
+        verify(ordenMapper).toDto(ordenActualizada);
+    }
+
+    // ... (los otros tests no necesitan cambios significativos para este refactor)
     @Test
     void testGetOrdenesByUsuario() {
         String usuarioId = "user123";
@@ -174,27 +233,6 @@ class OrdenServiceImplTest {
 
         assertNotNull(result);
         assertEquals(nuevoEstado, result.getEstado());
-        assertNotNull(result.getUsuario());
-        assertEquals("user123", result.getUsuario().getId());
-        verify(ordenRepository).save(orden);
-    }
-
-    @Test
-    void testAgregarNotaOrden() {
-        Long ordenId = 1L;
-        String nuevaNota = "Esta es una nota de prueba.";
-        Orden orden = createOrden(ordenId, EstadoOrden.CREADO, usuario);
-        OrdenDTO ordenDTO = createOrdenDTO(ordenId, EstadoOrden.CREADO, usuarioDTO);
-        ordenDTO.setNotas(List.of(nuevaNota));
-
-        when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(orden));
-        when(ordenRepository.save(any(Orden.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
-
-        OrdenDTO result = ordenService.agregarNotaOrden(ordenId, nuevaNota);
-
-        assertNotNull(result);
-        assertTrue(result.getNotas().contains(nuevaNota));
         assertNotNull(result.getUsuario());
         assertEquals("user123", result.getUsuario().getId());
         verify(ordenRepository).save(orden);

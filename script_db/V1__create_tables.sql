@@ -88,13 +88,6 @@ CREATE TABLE orden (
     CONSTRAINT fk_orden_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
 );
 
--- Tabla para notas de la Orden
-CREATE TABLE orden_notas (
-    orden_id BIGINT NOT NULL,
-    nota TEXT,
-    CONSTRAINT fk_orden_notas_orden FOREIGN KEY (orden_id) REFERENCES orden (id)
-);
-
 -- Tabla de unión para Orden y Receta
 CREATE TABLE orden_receta (
     orden_id BIGINT NOT NULL,
@@ -118,4 +111,14 @@ CREATE VIEW ingredientes_costos AS (
 	INNER JOIN tamano_tipo_ingrediente b ON a.tipo_ingrediente = b.tipo_ingrediente
 	INNER JOIN tamano c ON c.id = b.tamano_id
 	WHERE a.estado = TRUE AND c.estado = TRUE
+);
+
+CREATE TABLE nota (
+    id_nota BIGINT AUTO_INCREMENT PRIMARY KEY,
+    fecha_creacion TIMESTAMP NOT NULL,
+    nota VARCHAR(500) NOT NULL,
+    orden_id BIGINT NOT NULL,
+    usuario_id VARCHAR(255) NOT NULL,
+    FOREIGN KEY (orden_id) REFERENCES orden(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuario(id)
 );

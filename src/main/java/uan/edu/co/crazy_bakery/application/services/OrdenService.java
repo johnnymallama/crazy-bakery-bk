@@ -1,5 +1,6 @@
 package uan.edu.co.crazy_bakery.application.services;
 
+import uan.edu.co.crazy_bakery.application.dto.requests.AgregarNotaOrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearOrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.OrdenDTO;
 import uan.edu.co.crazy_bakery.domain.enums.EstadoOrden;
@@ -23,7 +24,7 @@ public interface OrdenService {
 
     OrdenDTO cambiarEstadoOrden(Long id, EstadoOrden estado);
 
-    OrdenDTO agregarNotaOrden(Long id, String nota);
+    OrdenDTO agregarNotaOrden(Long id, AgregarNotaOrdenDTO agregarNotaOrdenDTO);
 
     OrdenDTO agregarRecetaOrden(Long id, Long recetaId);
 

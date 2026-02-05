@@ -6,7 +6,7 @@ import uan.edu.co.crazy_bakery.application.dto.requests.CrearOrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.OrdenDTO;
 import uan.edu.co.crazy_bakery.domain.model.Orden;
 
-@Mapper(componentModel = "spring", uses = {RecetaMapper.class, UsuarioMapper.class})
+@Mapper(componentModel = "spring", uses = {RecetaMapper.class, UsuarioMapper.class, NotaMapper.class})
 public interface OrdenMapper {
 
     OrdenDTO toDto(Orden orden);
@@ -18,5 +18,6 @@ public interface OrdenMapper {
     @Mapping(target = "estado", ignore = true)
     @Mapping(target = "valorTotal", ignore = true)
     @Mapping(target = "ganancia", ignore = true)
+    @Mapping(target = "notas", ignore = true) // Ignoramos las notas en la creación
     Orden toEntity(CrearOrdenDTO crearOrdenDTO);
 }

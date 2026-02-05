@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import uan.edu.co.crazy_bakery.domain.enums.EstadoOrden;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -38,10 +39,9 @@ public class Orden {
     )
     private List<Receta> recetas;
 
-    @ElementCollection
-    @CollectionTable(name = "orden_notas", joinColumns = @JoinColumn(name = "orden_id"))
-    @Column(name = "nota")
-    private List<String> notas;
+    @OneToMany(mappedBy = "orden", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Nota> notas = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
