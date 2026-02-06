@@ -32,22 +32,25 @@ public class OrdenServiceImpl implements OrdenService {
     private final OrdenRepository ordenRepository;
     private final UsuarioRepository usuarioRepository;
     private final RecetaRepository recetaRepository;
-    private final NotaRepository notaRepository; // Inyectado
+    private final NotaRepository notaRepository;
     private final OrdenMapper ordenMapper;
     private final int gananciaPorcentaje;
+    private final int historyMonthCount;
 
     public OrdenServiceImpl(OrdenRepository ordenRepository,
                             UsuarioRepository usuarioRepository,
                             RecetaRepository recetaRepository,
-                            NotaRepository notaRepository, // Inyectado
+                            NotaRepository notaRepository,
                             OrdenMapper ordenMapper,
-                            @Value("${cost.benefit.percentage}") int gananciaPorcentaje) {
+                            @Value("${cost.benefit.percentage}") int gananciaPorcentaje,
+                            @Value("${core.order.history.month.count}") int historyMonthCount) {
         this.ordenRepository = ordenRepository;
         this.usuarioRepository = usuarioRepository;
         this.recetaRepository = recetaRepository;
-        this.notaRepository = notaRepository; // Inyectado
+        this.notaRepository = notaRepository;
         this.ordenMapper = ordenMapper;
         this.gananciaPorcentaje = gananciaPorcentaje;
+        this.historyMonthCount = historyMonthCount;
     }
 
     @Override
@@ -69,7 +72,11 @@ public class OrdenServiceImpl implements OrdenService {
     @Override
     @Transactional(readOnly = true)
     public List<OrdenDTO> getOrdenesByUsuario(String usuarioId) {
-        return ordenRepository.findByUsuarioId(usuarioId).stream()
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -historyMonthCount);
+        Date fechaInicio = cal.getTime();
+
+        return ordenRepository.findByUsuarioIdAndFechaAfterOrderByFechaDesc(usuarioId, fechaInicio).stream()
                 .map(ordenMapper::toDto)
                 .collect(Collectors.toList());
     }

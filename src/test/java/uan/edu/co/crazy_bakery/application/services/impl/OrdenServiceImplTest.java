@@ -48,11 +48,13 @@ class OrdenServiceImplTest {
     private Usuario usuario;
     private UsuarioDTO usuarioDTO;
 
+    private static final int HISTORY_MONTH_COUNT = 3;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        // Constructor actualizado con notaRepository
-        ordenService = new OrdenServiceImpl(ordenRepository, usuarioRepository, recetaRepository, notaRepository, ordenMapper, 10);
+        // Constructor actualizado con notaRepository y historyMonthCount
+        ordenService = new OrdenServiceImpl(ordenRepository, usuarioRepository, recetaRepository, notaRepository, ordenMapper, 10, HISTORY_MONTH_COUNT);
 
         usuario = new Usuario();
         usuario.setId("user123");
@@ -166,14 +168,13 @@ class OrdenServiceImplTest {
         verify(ordenMapper).toDto(ordenActualizada);
     }
 
-    // ... (los otros tests no necesitan cambios significativos para este refactor)
     @Test
     void testGetOrdenesByUsuario() {
         String usuarioId = "user123";
         Orden orden = createOrden(1L, EstadoOrden.CREADO, usuario);
         OrdenDTO ordenDTO = createOrdenDTO(1L, EstadoOrden.CREADO, usuarioDTO);
 
-        when(ordenRepository.findByUsuarioId(usuarioId)).thenReturn(List.of(orden));
+        when(ordenRepository.findByUsuarioIdAndFechaAfterOrderByFechaDesc(eq(usuarioId), any(Date.class))).thenReturn(List.of(orden));
         when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
 
         List<OrdenDTO> result = ordenService.getOrdenesByUsuario(usuarioId);
@@ -184,6 +185,8 @@ class OrdenServiceImplTest {
         assertNotNull(resultOrden.getUsuario());
         assertEquals(usuarioId, resultOrden.getUsuario().getId());
         assertEquals("Test User", resultOrden.getUsuario().getNombre());
+
+        verify(ordenRepository, times(1)).findByUsuarioIdAndFechaAfterOrderByFechaDesc(eq(usuarioId), any(Date.class));
     }
 
     @Test

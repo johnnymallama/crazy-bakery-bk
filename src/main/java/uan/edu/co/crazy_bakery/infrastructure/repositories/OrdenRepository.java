@@ -17,4 +17,7 @@ public interface OrdenRepository extends JpaRepository<Orden, Long> {
 
     List<Orden> findByFechaGreaterThanEqualAndFechaLessThan(Date fechaInicio, Date fechaFin);
 
+    List<Orden> findByUsuarioIdAndFechaAfterOrderByFechaDesc(String usuarioId, Date fecha);
+
+
 }
