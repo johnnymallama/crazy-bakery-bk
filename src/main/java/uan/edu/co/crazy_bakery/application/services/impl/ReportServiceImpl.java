@@ -1,32 +1,24 @@
 package uan.edu.co.crazy_bakery.application.services.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartUtils;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.CategoryPlot;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.renderer.category.BarRenderer;
-import org.jfree.data.category.DefaultCategoryDataset;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import uan.edu.co.crazy_bakery.application.dto.requests.ReportRequestDTO;
 import uan.edu.co.crazy_bakery.application.services.ReportService;
 
-import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 @Service
 public class ReportServiceImpl implements ReportService {
@@ -35,10 +27,14 @@ public class ReportServiceImpl implements ReportService {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
+    // --- Font Definitions ---
+    private static final BaseColor HIGHLIGHT_COLOR = new BaseColor(0, 51, 102);
     private static final Font TITLE_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, BaseColor.BLACK);
-    private static final Font SUBTITLE_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new BaseColor(0, 51, 102));
+    private static final Font SUBTITLE_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, HIGHLIGHT_COLOR);
     private static final Font NORMAL_FONT = FontFactory.getFont(FontFactory.HELVETICA, 10);
     private static final Font TABLE_HEADER_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, BaseColor.WHITE);
+    // Font for the ASCII chart bars, using a monospaced font for alignment
+    private static final Font BAR_CHART_FONT = FontFactory.getFont(FontFactory.COURIER, 10, HIGHLIGHT_COLOR);
 
     public ReportServiceImpl(ChatClient.Builder chatClientBuilder, JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.chatClient = chatClientBuilder.build();
@@ -48,9 +44,6 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public byte[] generateReport(ReportRequestDTO requestDTO) throws IOException, DocumentException {
-        // Set headless mode for AWT to work in a containerized environment
-        System.setProperty("java.awt.headless", "true");
-
         Map<String, Object> data = fetchDataForLast7Days();
         String jsonData = objectMapper.writeValueAsString(data);
         String prompt = buildPrompt(jsonData);
@@ -61,7 +54,7 @@ public class ReportServiceImpl implements ReportService {
         return generatePdfFromMarkdown(analysis, chartData);
     }
 
-    private Map<String, Object> fetchDataForLast7Days() throws JsonProcessingException {
+    private Map<String, Object> fetchDataForLast7Days() {
         String topCombinationsSql = """
             SELECT
                 b.nombre AS bizcocho,
@@ -142,7 +135,7 @@ public class ReportServiceImpl implements ReportService {
 
             for (String line : lines) {
                 line = line.trim();
-                 if (line.isEmpty() || line.contains("(Aquí va") || line.startsWith("---INICIO") || line.startsWith("---FIN") || line.startsWith("**Instrucción:**")) {
+                if (line.isEmpty() || line.contains("(Aquí va") || line.startsWith("---INICIO") || line.startsWith("---FIN") || line.startsWith("**Instrucción:**")) {
                     continue;
                 }
 
@@ -151,12 +144,10 @@ public class ReportServiceImpl implements ReportService {
                     table = null;
                     inTable = false;
                     addParagraph(document, "Gráfico de Demanda", SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
+                    
+                    // *** REPLACEMENT: Add ASCII chart instead of image ***
+                    addAsciiChartToDocument(document, chartData);
 
-                    byte[] chartBytes = createChartImage(chartData);
-                    Image chartImage = Image.getInstance(chartBytes);
-                    chartImage.scaleToFit(500, 400);
-                    chartImage.setAlignment(Element.ALIGN_CENTER);
-                    document.add(chartImage);
                     chartGenerated = true;
                 } else if (line.startsWith("# ")) {
                     flushTable(document, table);
@@ -167,7 +158,6 @@ public class ReportServiceImpl implements ReportService {
                     flushTable(document, table);
                     table = null;
                     inTable = false;
-                    // Evita que se duplique el título del gráfico
                     if (!line.contains("Gráfico de Demanda")) {
                          addParagraph(document, line.substring(3), SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
                     }
@@ -182,7 +172,7 @@ public class ReportServiceImpl implements ReportService {
                     } else if (!line.contains("---")) {
                         addTableRow(table, parseTableLine(line));
                     }
-                } else if (!line.startsWith("```")) { // Ignore code block fences
+                } else if (!line.startsWith("```")) {
                     flushTable(document, table);
                     table = null;
                     inTable = false;
@@ -195,36 +185,52 @@ public class ReportServiceImpl implements ReportService {
         }
     }
 
-    private byte[] createChartImage(List<Map<String, Object>> data) throws IOException {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+    private void addAsciiChartToDocument(Document document, List<Map<String, Object>> data) throws DocumentException {
+        if (data == null || data.isEmpty()) {
+            return;
+        }
+
+        // Find max value for scaling
+        long maxValue = 0;
+        for (Map<String, Object> item : data) {
+            long value = ((Number) item.getOrDefault("cantidad_pedidos", 0)).longValue();
+            if (value > maxValue) {
+                maxValue = value;
+            }
+        }
+
+        int maxBarWidth = 40; // Max characters for the longest bar
+        int maxLabelWidth = 35; // Max characters for the label part
 
         for (Map<String, Object> item : data) {
             String bizcocho = (String) item.getOrDefault("bizcocho", "");
             String relleno = (String) item.getOrDefault("relleno", "");
             String cobertura = (String) item.getOrDefault("cobertura", "");
-            String combination = bizcocho + ", " + relleno + ", " + cobertura;
-            Number value = (Number) item.get("cantidad_pedidos");
-            dataset.addValue(value, "Frecuencia", combination);
+            String combination = bizcocho + " + " + relleno + " + " + cobertura;
+            long value = ((Number) item.getOrDefault("cantidad_pedidos", 0)).longValue();
+
+            // Truncate label if it's too long
+            String label = combination;
+            if (label.length() > maxLabelWidth) {
+                label = label.substring(0, maxLabelWidth - 3) + "...";
+            }
+
+            // Calculate bar length
+            int barLength = (int) (maxValue > 0 ? (double) value / maxValue * maxBarWidth : 0);
+            String bar = String.join("", Collections.nCopies(barLength, "█"));
+
+            Paragraph p = new Paragraph();
+            p.setFont(NORMAL_FONT);
+            // *** BUG FIX: Removed extra space in format specifier ***
+            p.add(new Chunk(String.format("%-" + maxLabelWidth + "s: ", label))); // Padded label
+            p.add(new Chunk(bar, BAR_CHART_FONT)); // The colored bar
+            p.add(new Chunk(" (" + value + ")"));
+            p.setSpacingAfter(5f);
+            document.add(p);
         }
-
-        JFreeChart barChart = ChartFactory.createBarChart(
-                "Top 5 Combinaciones Más Vendidas",
-                "Combinación",
-                "Frecuencia",
-                dataset,
-                PlotOrientation.VERTICAL,
-                false, true, false);
-
-        CategoryPlot plot = barChart.getCategoryPlot();
-        plot.getRenderer().setSeriesPaint(0, new Color(0, 51, 102));
-        plot.setBackgroundPaint(Color.white);
-
-        BarRenderer renderer = (BarRenderer) plot.getRenderer();
-        renderer.setItemMargin(0.05);
-
-        // Aumentar la calidad de la imagen
-        return ChartUtils.encodeAsPNG(barChart.createBufferedImage(800, 600));
     }
+
+    // --- Helper Methods ---
 
     private void flushTable(Document document, PdfPTable table) throws DocumentException {
         if (table != null) {
@@ -246,7 +252,7 @@ public class ReportServiceImpl implements ReportService {
     private void addTableHeader(PdfPTable table, String[] headers) {
         for (String header : headers) {
             PdfPCell cell = new PdfPCell();
-            cell.setBackgroundColor(new BaseColor(0, 51, 102));
+            cell.setBackgroundColor(HIGHLIGHT_COLOR);
             cell.setPhrase(new Phrase(header, TABLE_HEADER_FONT));
             cell.setPadding(8);
             cell.setHorizontalAlignment(Element.ALIGN_CENTER);

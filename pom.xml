@@ -113,12 +113,6 @@
             <artifactId>itextpdf</artifactId>
             <version>5.5.13.3</version>
         </dependency>
-        
-        <dependency>
-            <groupId>org.jfree</groupId>
-            <artifactId>jfreechart</artifactId>
-            <version>1.5.3</version>
-        </dependency>
 
     </dependencies>
 
@@ -191,8 +185,7 @@
                 <version>3.4.0</version>
                 <configuration>
                     <from>
-                        <!-- Especificando explícitamente la imagen base distroless para Java 21 -->
-                        <image>gcr.io/distroless/java21-debian12</image>
+                        <image>eclipse-temurin:21-jre-jammy</image>
                     </from>
                     <to>
                         <image>us-central1-docker.pkg.dev/uan-especializacion/crazy-bakery/crazy-bakery-bk</image>
