@@ -109,4 +109,16 @@ class IngredienteTamanoServiceTest {
         // Assert
         assertFalse(result);
     }
+
+    @Test
+    void testCrearRelacion_cuandoTamanoNoExiste_lanzaExcepcion() {
+        // Arrange
+        CrearIngredienteTamanoDTO crearDto = new CrearIngredienteTamanoDTO();
+        crearDto.setTamanoId(99L);
+
+        when(tamanoRepository.findByIdAndEstadoTrue(99L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> ingredienteTamanoService.crearRelacion(crearDto));
+    }
 }

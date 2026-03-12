@@ -73,4 +73,22 @@ class TamanoRepositoryTest {
         assertThat(foundList.get(0).getId()).isEqualTo(tamanoActivo.getId());
         assertThat(foundList.get(0).isEstado()).isTrue();
     }
+
+    @Test
+    void testFindAllByTipoRecetaAndEstadoTrue() {
+        // El tamanoActivo tiene TipoReceta.TORTA y estado=true
+        List<Tamano> tortasActivas = tamanoRepository.findAllByTipoRecetaAndEstadoTrue(TipoReceta.TORTA);
+
+        assertThat(tortasActivas).hasSize(1);
+        assertThat(tortasActivas.get(0).getId()).isEqualTo(tamanoActivo.getId());
+        assertThat(tortasActivas.get(0).getTipoReceta()).isEqualTo(TipoReceta.TORTA);
+    }
+
+    @Test
+    void testFindAllByTipoRecetaAndEstadoTrue_cuandoNoHay() {
+        // No existen CUPCAKE activos (el inactivo tiene CUPCAKE pero estado=false)
+        List<Tamano> cupcakesActivos = tamanoRepository.findAllByTipoRecetaAndEstadoTrue(TipoReceta.CUPCAKE);
+
+        assertThat(cupcakesActivos).isEmpty();
+    }
 }

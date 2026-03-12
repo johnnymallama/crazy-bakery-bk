@@ -274,4 +274,179 @@ class OrdenServiceImplTest {
         assertEquals("user123", result.getUsuario().getId());
         verify(ordenRepository).save(orden);
     }
+
+    @Test
+    void testGetAllOrdenes() {
+        // Arrange
+        Orden orden = createOrden(1L, EstadoOrden.CREADO, usuario);
+        OrdenDTO ordenDTO = createOrdenDTO(1L, EstadoOrden.CREADO, usuarioDTO);
+
+        when(ordenRepository.findAll()).thenReturn(List.of(orden));
+        when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
+
+        // Act
+        List<OrdenDTO> result = ordenService.getAllOrdenes();
+
+        // Assert
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals(1, result.size());
+        assertEquals(EstadoOrden.CREADO, result.get(0).getEstado());
+    }
+
+    @Test
+    void testGetOrdenById_cuandoExiste() {
+        // Arrange
+        Long ordenId = 1L;
+        Orden orden = createOrden(ordenId, EstadoOrden.CREADO, usuario);
+        OrdenDTO ordenDTO = createOrdenDTO(ordenId, EstadoOrden.CREADO, usuarioDTO);
+
+        when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(orden));
+        when(ordenMapper.toDto(orden)).thenReturn(ordenDTO);
+
+        // Act
+        OrdenDTO result = ordenService.getOrdenById(ordenId);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(ordenId, result.getId());
+    }
+
+    @Test
+    void testGetOrdenById_cuandoNoExiste_lanzaExcepcion() {
+        // Arrange
+        Long ordenId = 99L;
+        when(ordenRepository.findById(ordenId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> ordenService.getOrdenById(ordenId));
+    }
+
+    @Test
+    void testCreateOrden_cuandoUsuarioNoExiste_lanzaExcepcion() {
+        // Arrange
+        CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO("usuario_inexistente", List.of(1L), null);
+        when(usuarioRepository.findById("usuario_inexistente")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> ordenService.createOrden(crearOrdenDTO));
+    }
+
+    @Test
+    void testCreateOrden_cuandoRecetasNoCoinciden_lanzaExcepcion() {
+        // Arrange
+        CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO("user123", List.of(1L, 2L), null);
+
+        when(usuarioRepository.findById("user123")).thenReturn(Optional.of(usuario));
+        // Solo se devuelve 1 receta aunque se pidieron 2
+        Receta receta = new Receta();
+        when(recetaRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(receta));
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> ordenService.createOrden(crearOrdenDTO));
+    }
+
+    @Test
+    void testCambiarEstadoOrden_cuandoNoExiste_lanzaExcepcion() {
+        // Arrange
+        Long ordenId = 99L;
+        when(ordenRepository.findById(ordenId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> ordenService.cambiarEstadoOrden(ordenId, EstadoOrden.EN_PROCESO));
+    }
+
+    @Test
+    void testAgregarNotaOrden_cuandoOrdenNoExiste_lanzaExcepcion() {
+        // Arrange
+        Long ordenId = 99L;
+        AgregarNotaOrdenDTO dto = new AgregarNotaOrdenDTO();
+        dto.setNota("Nota");
+        dto.setUsuarioId("user123");
+
+        when(ordenRepository.findById(ordenId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> ordenService.agregarNotaOrden(ordenId, dto));
+    }
+
+    @Test
+    void testAgregarNotaOrden_cuandoUsuarioNoExiste_lanzaExcepcion() {
+        // Arrange
+        Long ordenId = 1L;
+        AgregarNotaOrdenDTO dto = new AgregarNotaOrdenDTO();
+        dto.setNota("Nota");
+        dto.setUsuarioId("usuario_inexistente");
+
+        Orden orden = createOrden(ordenId, EstadoOrden.CREADO, usuario);
+        when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(orden));
+        when(usuarioRepository.findById("usuario_inexistente")).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> ordenService.agregarNotaOrden(ordenId, dto));
+    }
+
+    @Test
+    void testAgregarRecetaOrden_cuandoOrdenNoExiste_lanzaExcepcion() {
+        // Arrange
+        Long ordenId = 99L;
+        Long recetaId = 1L;
+        when(ordenRepository.findById(ordenId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> ordenService.agregarRecetaOrden(ordenId, recetaId));
+    }
+
+    @Test
+    void testAgregarRecetaOrden_cuandoRecetaNoExiste_lanzaExcepcion() {
+        // Arrange
+        Long ordenId = 1L;
+        Long recetaId = 99L;
+        Orden orden = createOrden(ordenId, EstadoOrden.CREADO, usuario);
+
+        when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(orden));
+        when(recetaRepository.findById(recetaId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> ordenService.agregarRecetaOrden(ordenId, recetaId));
+    }
+
+    @Test
+    void testAgregarRecetaOrden_cuandoRecetasEsNull_inicializaLista() {
+        // Arrange
+        Long ordenId = 1L;
+        Long recetaId = 2L;
+
+        // Crear orden con recetas = null (sin llamar a setRecetas)
+        Orden ordenConRecetasNull = new Orden();
+        ordenConRecetasNull.setId(ordenId);
+        ordenConRecetasNull.setEstado(EstadoOrden.CREADO);
+        ordenConRecetasNull.setUsuario(usuario);
+        ordenConRecetasNull.setNotas(new ArrayList<>());
+        // NO llamamos setRecetas, por lo que será null
+
+        Torta torta = new Torta();
+        torta.setValor(10.0f);
+
+        Receta receta = new Receta();
+        receta.setId(recetaId);
+        receta.setCostoManoObra(10.0f);
+        receta.setCostoOperativo(20.0f);
+        receta.setCantidad(1);
+        receta.setTorta(torta);
+
+        OrdenDTO ordenDTO = createOrdenDTO(ordenId, EstadoOrden.CREADO, usuarioDTO);
+
+        when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(ordenConRecetasNull));
+        when(recetaRepository.findById(recetaId)).thenReturn(Optional.of(receta));
+        when(ordenRepository.save(any(Orden.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
+
+        // Act
+        OrdenDTO result = ordenService.agregarRecetaOrden(ordenId, recetaId);
+
+        // Assert
+        assertNotNull(result);
+        verify(ordenRepository).save(ordenConRecetasNull);
+    }
 }

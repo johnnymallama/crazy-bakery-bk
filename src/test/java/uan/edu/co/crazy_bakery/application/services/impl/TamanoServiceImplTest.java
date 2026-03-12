@@ -132,4 +132,18 @@ class TamanoServiceImplTest {
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
     }
+
+    @Test
+    void testActualizarTamano_NotFound() {
+        when(tamanoRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> tamanoService.actualizarTamano(1L, actualizarTamanoDTO));
+    }
+
+    @Test
+    void testEliminarTamano_NotFound() {
+        when(tamanoRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> tamanoService.eliminarTamano(1L));
+    }
 }

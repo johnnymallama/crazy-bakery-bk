@@ -10,6 +10,7 @@ import uan.edu.co.crazy_bakery.domain.enums.*;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -152,6 +153,133 @@ class OrdenRepositoryTest {
         Orden foundOrden = entityManager.find(Orden.class, savedOrden.getId());
         assertThat(foundOrden.getRecetas()).hasSize(1);
         assertThat(foundOrden.getRecetas().get(0).getId()).isEqualTo(receta.getId());
+    }
+
+    @Test
+    void testFindByUsuarioId() {
+        // given
+        Usuario usuario = new Usuario();
+        usuario.setId("busqueda-usuario");
+        usuario.setNombre("Busqueda");
+        usuario.setApellido("Test");
+        usuario.setEmail("busqueda@example.com");
+        usuario.setTipo(TipoUsuario.CONSUMIDOR);
+        usuario.setEstado(true);
+        entityManager.persist(usuario);
+
+        Orden orden = new Orden();
+        orden.setUsuario(usuario);
+        orden.setFecha(new Date());
+        orden.setEstado(EstadoOrden.CREADO);
+        orden.setValorTotal(200.0f);
+        entityManager.persist(orden);
+        entityManager.flush();
+
+        // when
+        List<Orden> ordenes = ordenRepository.findByUsuarioId("busqueda-usuario");
+
+        // then
+        assertThat(ordenes).hasSize(1);
+        assertThat(ordenes.get(0).getUsuario().getId()).isEqualTo("busqueda-usuario");
+    }
+
+    @Test
+    void testFindByEstado() {
+        // given
+        Usuario usuario = new Usuario();
+        usuario.setId("estado-usuario");
+        usuario.setNombre("Estado");
+        usuario.setApellido("Test");
+        usuario.setEmail("estado@example.com");
+        usuario.setTipo(TipoUsuario.CONSUMIDOR);
+        usuario.setEstado(true);
+        entityManager.persist(usuario);
+
+        Orden ordenCreado = new Orden();
+        ordenCreado.setUsuario(usuario);
+        ordenCreado.setFecha(new Date());
+        ordenCreado.setEstado(EstadoOrden.CREADO);
+        ordenCreado.setValorTotal(100.0f);
+        entityManager.persist(ordenCreado);
+
+        Orden ordenEntregado = new Orden();
+        ordenEntregado.setUsuario(usuario);
+        ordenEntregado.setFecha(new Date());
+        ordenEntregado.setEstado(EstadoOrden.ENTREGADO);
+        ordenEntregado.setValorTotal(150.0f);
+        entityManager.persist(ordenEntregado);
+        entityManager.flush();
+
+        // when
+        List<Orden> creadas = ordenRepository.findByEstado(EstadoOrden.CREADO);
+
+        // then
+        assertThat(creadas).isNotEmpty();
+        assertThat(creadas).allMatch(o -> o.getEstado() == EstadoOrden.CREADO);
+    }
+
+    @Test
+    void testFindByFechaGreaterThanEqualAndFechaLessThan() {
+        // given
+        Usuario usuario = new Usuario();
+        usuario.setId("fecha-usuario");
+        usuario.setNombre("Fecha");
+        usuario.setApellido("Test");
+        usuario.setEmail("fecha@example.com");
+        usuario.setTipo(TipoUsuario.CONSUMIDOR);
+        usuario.setEstado(true);
+        entityManager.persist(usuario);
+
+        Date ahora = new Date();
+
+        Orden orden = new Orden();
+        orden.setUsuario(usuario);
+        orden.setFecha(ahora);
+        orden.setEstado(EstadoOrden.CREADO);
+        orden.setValorTotal(100.0f);
+        entityManager.persist(orden);
+        entityManager.flush();
+
+        Date inicio = new Date(ahora.getTime() - 1000);
+        Date fin = new Date(ahora.getTime() + 1000);
+
+        // when
+        List<Orden> result = ordenRepository.findByFechaGreaterThanEqualAndFechaLessThan(inicio, fin);
+
+        // then
+        assertThat(result).isNotEmpty();
+    }
+
+    @Test
+    void testFindByUsuarioIdAndFechaAfterOrderByFechaDesc() {
+        // given
+        Usuario usuario = new Usuario();
+        usuario.setId("hist-usuario");
+        usuario.setNombre("Hist");
+        usuario.setApellido("Test");
+        usuario.setEmail("hist@example.com");
+        usuario.setTipo(TipoUsuario.CONSUMIDOR);
+        usuario.setEstado(true);
+        entityManager.persist(usuario);
+
+        Date ahora = new Date();
+
+        Orden orden = new Orden();
+        orden.setUsuario(usuario);
+        orden.setFecha(ahora);
+        orden.setEstado(EstadoOrden.CREADO);
+        orden.setValorTotal(100.0f);
+        entityManager.persist(orden);
+        entityManager.flush();
+
+        Date hace1Hora = new Date(ahora.getTime() - 3600_000);
+
+        // when
+        List<Orden> result = ordenRepository.findByUsuarioIdAndFechaAfterOrderByFechaDesc("hist-usuario", hace1Hora);
+
+        // then
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getUsuario().getId()).isEqualTo("hist-usuario");
     }
 
     private Ingrediente createAndPersistIngrediente(TipoIngrediente tipo, String nombre) {
