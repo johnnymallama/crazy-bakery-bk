@@ -17,6 +17,7 @@ public class FirebaseConfig {
         // if it's set. Otherwise, it will try to find credentials in the classpath.
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.getApplicationDefault())
+                .setProjectId(System.getenv("FIREBASE_PROJECT_ID"))
                 .build();
 
         // Avoid re-initializing the app
