@@ -10,6 +10,8 @@ import uan.edu.co.crazy_bakery.application.dto.responses.UsuarioDTO;
 import uan.edu.co.crazy_bakery.domain.model.Usuario;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.UsuarioRepository;
 
+import uan.edu.co.crazy_bakery.application.dto.requests.ActualizarUsuarioDTO;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -87,5 +89,78 @@ class UsuarioServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("1", result.get(0).getId());
+    }
+
+    @Test
+    void testInactivarUsuario_cuandoExiste_retornaUsuarioInactivo() {
+        // Arrange
+        String id = "1";
+        Usuario usuario = new Usuario();
+        usuario.setId(id);
+        usuario.setNombre("Test User");
+        usuario.setEstado(true);
+
+        when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+
+        // Act
+        Optional<UsuarioDTO> result = usuarioService.inactivarUsuario(id);
+
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(id, result.get().getId());
+    }
+
+    @Test
+    void testInactivarUsuario_cuandoNoExiste_retornaEmpty() {
+        // Arrange
+        String id = "inexistente";
+        when(usuarioRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act
+        Optional<UsuarioDTO> result = usuarioService.inactivarUsuario(id);
+
+        // Assert
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    void testActualizarUsuario_cuandoExiste_retornaUsuarioActualizado() {
+        // Arrange
+        String id = "1";
+        Usuario usuario = new Usuario();
+        usuario.setId(id);
+        usuario.setNombre("Test User");
+
+        ActualizarUsuarioDTO dto = new ActualizarUsuarioDTO();
+        dto.setTelefono("3001234567");
+        dto.setDireccion("Calle 10 # 20-30");
+        dto.setDepartamento("Cundinamarca");
+        dto.setCiudad("Bogotá");
+
+        when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+
+        // Act
+        Optional<UsuarioDTO> result = usuarioService.actualizarUsuario(id, dto);
+
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(id, result.get().getId());
+    }
+
+    @Test
+    void testActualizarUsuario_cuandoNoExiste_retornaEmpty() {
+        // Arrange
+        String id = "inexistente";
+        ActualizarUsuarioDTO dto = new ActualizarUsuarioDTO();
+
+        when(usuarioRepository.findById(id)).thenReturn(Optional.empty());
+
+        // Act
+        Optional<UsuarioDTO> result = usuarioService.actualizarUsuario(id, dto);
+
+        // Assert
+        assertFalse(result.isPresent());
     }
 }

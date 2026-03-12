@@ -198,4 +198,39 @@ class RecetaServiceImplTest {
 
         assertEquals("Receta no encontrada con id: " + recetaId, exception.getMessage());
     }
+
+    @Test
+    void testCrearReceta_cuandoStorageLanzaIOException_lanzaRuntimeException() throws IOException {
+        // Arrange
+        long tortaId = 1L;
+        String originalUrl = "http://example.com/cake.png";
+
+        CrearRecetaDTO crearRecetaDTO = new CrearRecetaDTO();
+        crearRecetaDTO.setTortaId(tortaId);
+        crearRecetaDTO.setCantidad(1);
+        crearRecetaDTO.setTipoReceta(TipoReceta.TORTA);
+        crearRecetaDTO.setPrompt("cake test");
+        crearRecetaDTO.setImagenUrl(originalUrl);
+
+        Torta torta = new Torta();
+        torta.setId(tortaId);
+        torta.setValor(50.0f);
+        Tamano tamano = new Tamano();
+        tamano.setTiempo(1.0f);
+        torta.setTamano(tamano);
+
+        Receta receta = new Receta();
+        receta.setTorta(torta);
+
+        when(tortaRepository.findById(tortaId)).thenReturn(Optional.of(torta));
+        when(recetaMapper.crearRecetaDTOToReceta(crearRecetaDTO, torta)).thenReturn(receta);
+        when(storageService.uploadFileFromUrl(anyString(), anyString())).thenThrow(new IOException("Error de red"));
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            recetaService.crearReceta(crearRecetaDTO);
+        });
+
+        assertEquals("Error al procesar la imagen de la receta", exception.getMessage());
+    }
 }

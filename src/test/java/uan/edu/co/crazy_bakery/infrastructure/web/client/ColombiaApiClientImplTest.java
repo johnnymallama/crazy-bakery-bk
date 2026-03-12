@@ -1,9 +1,11 @@
 package uan.edu.co.crazy_bakery.infrastructure.web.client;
 
+import com.google.firebase.FirebaseApp;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import uan.edu.co.crazy_bakery.application.dto.responses.geografia.CiudadDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.geografia.DepartamentoDTO;
@@ -16,6 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @SpringBootTest
 @ActiveProfiles("test")
 class ColombiaApiClientImplTest {
+
+    @MockBean
+    FirebaseApp firebaseApp;
 
     @Autowired
     private ColombiaApiClient colombiaApiClient;

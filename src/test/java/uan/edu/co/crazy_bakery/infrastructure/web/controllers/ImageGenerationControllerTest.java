@@ -67,6 +67,38 @@ class ImageGenerationControllerTest {
     }
 
     @Test
+    void generateImage_withNullPrompt_shouldReturnBadRequest() {
+        // Arrange — request sin clave "prompt", por lo que request.get("prompt") retorna null
+        Map<String, String> request = new java.util.HashMap<>();
+        request.put("otra_clave", "valor");
+
+        // Act
+        ResponseEntity<?> response = imageGenerationController.generateImage(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void generateCustomCakeImage_withNullTipoReceta_shouldReturnBadRequest() {
+        // Arrange — tipoReceta = null
+        CustomCakeImageRequestDTO requestDTO = new CustomCakeImageRequestDTO(
+                null,
+                "Standard size",
+                Collections.singletonList(new IngredientDetailDTO("BIZCOCHO", "Vanilla", "Vanilla extract")),
+                "For a small party"
+        );
+
+        // Act
+        ResponseEntity<GeneratedImageResponseDTO> response = imageGenerationController.generateCustomCakeImage(requestDTO);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
     void generateCustomCakeImage_withValidRequest_shouldReturnGeneratedImage() {
         // Arrange
         IngredientDetailDTO ingredient = new IngredientDetailDTO("BIZCOCHO", "Vanilla", "Vanilla extract");
