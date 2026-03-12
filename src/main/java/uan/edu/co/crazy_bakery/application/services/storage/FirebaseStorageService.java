@@ -10,7 +10,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.concurrent.TimeUnit;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class FirebaseStorageService implements StorageService {
@@ -34,8 +35,9 @@ public class FirebaseStorageService implements StorageService {
         try (InputStream inputStream = connection.getInputStream()) {
             Blob blob = bucket.create(fileName, inputStream, connection.getContentType());
 
-            // Return the public URL of the uploaded file, valid for 100 years
-            return blob.signUrl(365 * 100, TimeUnit.DAYS).toString();
+            // Retorna la URL pública de Firebase Storage (el bucket permite lectura pública)
+            String encodedFileName = URLEncoder.encode(blob.getName(), StandardCharsets.UTF_8);
+            return "https://firebasestorage.googleapis.com/v0/b/" + bucketName + "/o/" + encodedFileName + "?alt=media";
         }
     }
 }
