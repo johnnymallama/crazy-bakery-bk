@@ -7,6 +7,9 @@
   packages = [
     pkgs.zulu21
     pkgs.maven
+    pkgs.fontconfig
+    pkgs.freetype
+    pkgs.dejavu_fonts
   ];
   # Sets environment variables in the workspace
   env = {
