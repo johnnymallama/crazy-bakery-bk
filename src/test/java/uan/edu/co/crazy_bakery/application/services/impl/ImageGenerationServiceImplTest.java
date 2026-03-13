@@ -1,8 +1,5 @@
 package uan.edu.co.crazy_bakery.application.services.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -28,12 +25,6 @@ class ImageGenerationServiceImplTest {
 
     @Mock
     private ImageModel imageModel;
-
-    @Mock
-    private ObjectMapper objectMapper;
-
-    @Mock
-    private ObjectWriter objectWriter;
 
     @InjectMocks
     private ImageGenerationServiceImpl imageGenerationService;
@@ -63,7 +54,7 @@ class ImageGenerationServiceImplTest {
     }
 
     @Test
-    void testGenerateCustomCakeImage() throws JsonProcessingException {
+    void testGenerateCustomCakeImage() {
         // Arrange
         IngredientDetailDTO ingredient = new IngredientDetailDTO("BIZCOCHO", "Chocolate", "Chocolate");
         CustomCakeImageRequestDTO requestDTO = new CustomCakeImageRequestDTO(
@@ -73,14 +64,11 @@ class ImageGenerationServiceImplTest {
                 "Birthday party"
         );
 
-        String expectedJson = "{ \"tipo_receta\": \"TORTA\", ... }";
         String expectedUrl = "http://example.com/custom_cake.png";
         Image image = new Image(expectedUrl, null);
         ImageGeneration imageGeneration = new ImageGeneration(image);
         ImageResponse imageResponse = new ImageResponse(List.of(imageGeneration));
 
-        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(objectWriter);
-        when(objectWriter.writeValueAsString(any(CustomCakeImageRequestDTO.class))).thenReturn(expectedJson);
         when(imageModel.call(any(ImagePrompt.class))).thenReturn(imageResponse);
 
         // Act
@@ -94,23 +82,18 @@ class ImageGenerationServiceImplTest {
         assertTrue(responseDTO.getPrompt().contains(requestDTO.getTamano()));
         assertTrue(responseDTO.getPrompt().contains(ingredient.getNombre()));
         assertTrue(responseDTO.getPrompt().contains(requestDTO.getDetalle()));
-        assertTrue(responseDTO.getPrompt().contains(expectedJson));
     }
 
     @Test
-    void testGenerateCustomCakeImage_JsonProcessingException() throws JsonProcessingException {
+    void testGenerateCustomCakeImage_ingredientesNulos() {
         // Arrange
-        CustomCakeImageRequestDTO requestDTO = new CustomCakeImageRequestDTO();
-
-        when(objectMapper.writerWithDefaultPrettyPrinter()).thenReturn(objectWriter);
-        when(objectWriter.writeValueAsString(any(CustomCakeImageRequestDTO.class))).thenThrow(new JsonProcessingException("Test Exception"){});
+        CustomCakeImageRequestDTO requestDTO = new CustomCakeImageRequestDTO(
+                "TORTA", "Torta pequeña", null, "Birthday party"
+        );
 
         // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            imageGenerationService.generateCustomCakeImage(requestDTO);
-        });
-
-        assertEquals("Error converting request to JSON", exception.getMessage());
-        assertTrue(exception.getCause() instanceof JsonProcessingException);
+        assertThrows(NullPointerException.class, () ->
+                imageGenerationService.generateCustomCakeImage(requestDTO)
+        );
     }
 }
