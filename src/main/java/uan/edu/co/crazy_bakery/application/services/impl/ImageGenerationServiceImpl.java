@@ -1,7 +1,5 @@
 package uan.edu.co.crazy_bakery.application.services.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.image.Image;
 import org.springframework.ai.image.ImageModel;
 import org.springframework.ai.image.ImagePrompt;
@@ -19,11 +17,9 @@ import java.util.stream.Collectors;
 public class ImageGenerationServiceImpl implements ImageGenerationService {
 
     private final ImageModel imageModel;
-    private final ObjectMapper objectMapper; // For converting the DTO to a JSON string
 
-    public ImageGenerationServiceImpl(ImageModel imageModel, ObjectMapper objectMapper) {
+    public ImageGenerationServiceImpl(ImageModel imageModel) {
         this.imageModel = imageModel;
-        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -35,15 +31,7 @@ public class ImageGenerationServiceImpl implements ImageGenerationService {
 
     @Override
     public GeneratedImageResponseDTO generateCustomCakeImage(CustomCakeImageRequestDTO requestDTO) {
-        String jsonPlaceholder = "";
-        try {
-            jsonPlaceholder = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(requestDTO);
-        } catch (JsonProcessingException e) {
-            // Handle the exception, maybe log it and return an error response
-            throw new RuntimeException("Error converting request to JSON", e);
-        }
-
-        String promptTemplate = "Hola quiero que te comportes como un experto en repostería para mi compañía, para esta oportunidad necesito que me generes una imagen de una %s con el tamaño %s, que deben contener los siguientes ingredientes: %s. Adicional a esto, el cliente quiere este producto para la siguiente ocasión o evento: '%s'. Ten presente siempre que con la ocasión o evento, proponer una decoración no fuera de lo común, adicional a esto crea imagen lo mas abstractas posibles a la realidad. ---JSON PLACEHOLDER--- %s ---FIN JSON PLACEHOLDER---";
+        String promptTemplate = "Fotografía profesional de pastelería de una %s de tamaño %s, hecha con los siguientes ingredientes: %s. La torta está decorada para la ocasión: '%s'. La decoración debe ser elegante, realista y fabricable por un pastelero profesional — sin elementos fantásticos ni imposibles. Fondo de un solo color neutro y liso (como blanco hueso, gris claro o beige suave) que resalte la torta. Iluminación de estudio, alta resolución, estilo editorial de revista de repostería.";
 
         String ingredientsString = requestDTO.getIngredientes().stream()
                 .map(IngredientDetailDTO::getNombre)
@@ -53,8 +41,7 @@ public class ImageGenerationServiceImpl implements ImageGenerationService {
                 requestDTO.getTipoReceta(),
                 requestDTO.getTamano(),
                 ingredientsString,
-                requestDTO.getDetalle(),
-                jsonPlaceholder
+                requestDTO.getDetalle()
         );
 
         ImagePrompt imagePrompt = new ImagePrompt(finalPrompt);
