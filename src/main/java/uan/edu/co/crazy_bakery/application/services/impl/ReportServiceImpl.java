@@ -120,7 +120,7 @@ public class ReportServiceImpl implements ReportService {
                 + "       - **IMPORTANTE**: Al final de tu propuesta, incluye un bloque JSON oculto con la combinación propuesta para que el sistema pueda generar el gráfico. Ejemplo:\n"
                 + "         <!-- PROPUESTA_JSON\n{\n  \"bizcocho\": \"Bizcocho de Vainilla\",\n  \"relleno\": \"Crema de Fresa\",\n  \"cobertura\": \"Chocolate Negro\"\n}\n-->\n"
                 + "   3.3. **Análisis de Costos:** Construye una tabla Markdown con dos combinaciones de ingredientes (una del top y tu nueva propuesta) y realiza el calculo de los costos por gramo en pesos Colombianos.\n"
-                + "---FIN REGLAS REPORTE---";
+                                + "---FIN REGLAS REPORTE---";
     }
 
     private byte[] generatePdf(String markdownText, List<Map<String, Object>> topCombinations) throws DocumentException, IOException {
