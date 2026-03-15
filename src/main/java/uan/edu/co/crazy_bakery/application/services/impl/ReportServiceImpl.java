@@ -40,6 +40,7 @@ public class ReportServiceImpl implements ReportService {
 
     private static final Font TITLE_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, BaseColor.BLACK);
     private static final Font SUBTITLE_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new BaseColor(0, 51, 102));
+    private static final Font SUB_SUBTITLE_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, new BaseColor(0, 51, 102));
     private static final Font NORMAL_FONT = FontFactory.getFont(FontFactory.HELVETICA, 10);
     private static final Font TABLE_HEADER_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, BaseColor.WHITE);
 
@@ -56,28 +57,21 @@ public class ReportServiceImpl implements ReportService {
         String prompt = buildPrompt(jsonData);
         String analysis = chatClient.prompt().user(prompt).call().content();
 
+        if (analysis == null || analysis.trim().isEmpty()) {
+            throw new DocumentException("La respuesta de la IA está vacía. No se puede generar el reporte.");
+        }
+
         List<Map<String, Object>> topCombinations = (List<Map<String, Object>>) data.get("combinacionesVendidas");
 
         return generatePdf(analysis, topCombinations);
     }
 
     private Map<String, Object> fetchDataForLast50Days() throws JsonProcessingException {
-        String topCombinationsSql = """
-            SELECT
-                b.nombre AS bizcocho,
-                r.nombre AS relleno,
-                c.nombre AS cobertura,
-                COUNT(*) AS cantidad_pedidos
-            FROM `orden` o
-            INNER JOIN torta t ON o.id = t.id
-            INNER JOIN ingrediente b ON b.id = t.bizcocho_id
-            INNER JOIN ingrediente r ON r.id = t.relleno_id
-            INNER JOIN ingrediente c ON c.id = t.cubertura_id
-            WHERE o.fecha >= DATE_SUB(CURDATE(), INTERVAL 50 DAY)
-            GROUP BY b.nombre, r.nombre, c.nombre
-            ORDER BY cantidad_pedidos DESC
-            LIMIT 5;
-        """;
+        String topCombinationsSql = "SELECT b.nombre AS bizcocho, r.nombre AS relleno, c.nombre AS cobertura, COUNT(*) AS cantidad_pedidos " +
+                "FROM `orden` o INNER JOIN torta t ON o.id = t.id INNER JOIN ingrediente b ON b.id = t.bizcocho_id " +
+                "INNER JOIN ingrediente r ON r.id = t.relleno_id INNER JOIN ingrediente c ON c.id = t.cubertura_id " +
+                "WHERE o.fecha >= DATE_SUB(CURDATE(), INTERVAL 50 DAY) GROUP BY b.nombre, r.nombre, c.nombre " +
+                "ORDER BY cantidad_pedidos DESC LIMIT 5;";
 
         String totalOrdersSql = "SELECT COUNT(*) FROM orden WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 50 DAY)";
         String newIngredientsSql = "SELECT nombre, costo_por_gramo FROM ingrediente WHERE tipo_ingrediente NOT IN ('BIZCOCHO', 'RELLENO', 'COBERTURA') AND estado = TRUE;";
@@ -95,32 +89,39 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private String buildPrompt(String jsonData) {
-        return "Actua como un analista de datos y chef de I+D en el sector de la pastelería. Tu tarea es generar un reporte estratégico en formato Markdown a partir de la fuente de datos JSON proporcionada.\n"
-                + "El reporte debe seguir estrictamente la estructura y las reglas definidas a continuación. No incluyas explicaciones adicionales ni código HTML.\n\n"
-                + "---FUENTE DE DATOS---\n"
-                + jsonData + "\n"
-                + "---FIN FUENTE DE DATOS---\n\n"
-                + "---CONTEXTO DE LA EMPRESA---\n"
-                + "El proyecto se enmarca en el sector de repostería personalizada, donde cada producto se diseña a medida.\n"
-                + "---FIN CONTEXTO DE LA EMPRESA---\n\n"
-                + "---ESTRUCTURA DEL REPORTE---\n"
-                + "# ${titulo}\n\n"
-                + "## Descripción Reporte\n"
-                + "> ${descripcion}\n\n"
-                + "## ${contenido}\n\n"
-                + "---FIN ESTRUCTURA DEL REPORTE---\n\n"
-                + "---REGLAS REPORTE---\n"
-                + "1. Titulo = Top ingrediente demanda + Tendencias (Propuesta)\n"
-                + "2. descripcion = Crea un speech del resultado del análisis que llevaste.\n"
-                + "3. contenido: Debe tener las siguientes secciones en Markdown, en este orden:\n"
-                + "   3.1. **Análisis de Tendencias:** Basado en los datos de 'combinacionesVendidas', construye un párrafo de análisis sobre la demanda y las preferencias de los clientes. Menciona que el gráfico de barras del 'Top 5' se adjuntará en el reporte.\n"
-                + "   3.2. **Propuesta de Tendencias:** Analiza las combinaciones del Top Demanda para identificar los ingredientes más recurrentes en cada categoría (Bizcocho, Relleno y Cobertura). Con base en ese análisis:\n"
-                + "       - Propón una nueva combinación de postre que no exista exactamente en el Top Demanda pero que aproveche los ingredientes más populares.\n"
-                + "       - Explica la lógica de la propuesta en formato 'speech' o párrafo, justificando por qué podría tener buena aceptación.\n"
-                + "       - **IMPORTANTE**: Al final de tu propuesta, incluye un bloque JSON oculto con la combinación propuesta para que el sistema pueda generar el gráfico. Ejemplo:\n"
-                + "         <!-- PROPUESTA_JSON\n{\n  \"bizcocho\": \"Bizcocho de Vainilla\",\n  \"relleno\": \"Crema de Fresa\",\n  \"cobertura\": \"Chocolate Negro\"\n}\n-->\n"
-                + "   3.3. **Análisis de Costos:** Construye una tabla Markdown con dos combinaciones de ingredientes (una del top y tu nueva propuesta) y realiza el calculo de los costos por gramo en pesos Colombianos.\n"
-                                + "---FIN REGLAS REPORTE---";
+        return "Actúa como un analista de datos experto para una pastelería de repostería personalizada.\n"
+                + "Usando la base de datos JSON de combinaciones vendidas, genera un reporte estratégico de comportamiento del cliente, cuyo objetivo es apoyar la toma de decisiones operativas mensuales, mejorar la eficiencia del negocio y detectar oportunidades de nuevos productos.\n\n"
+                + "---FUENTE DE DATOS---\n" + jsonData + "\n---FIN FUENTE DE DATOS---\n\n"
+
+                + "# Análisis Estratégico de Ingredientes\n\n"
+                + "## 1. Resumen Ejecutivo\n"
+                + "Redacta un breve resumen explicando:\n- Número total de órdenes analizadas\n- Ingrediente o relleno más popular\n- Combinación más vendida\n- Insight principal del comportamiento del cliente\n- Una recomendación operativa para el negocio\nEl resumen debe ser claro y enfocado en toma de decisiones.\n\n"
+                + "## 2. Análisis de Tendencias\n"
+                + "Analiza las combinaciones vendidas e identifica:\n- Ingredientes más utilizados\n- Sabores dominantes\n- Preferencias del cliente\nExplica los patrones detectados en un párrafo claro.\n\n"
+                + "## 3. Top Demanda\n"
+                + "Construye una tabla Markdown con las 5 combinaciones más vendidas. La tabla debe incluir:\n| Combinación | Número de pedidos | Porcentaje de demanda |\n\n"
+                + "## 4. Gráfico de Demanda\n"
+                + "(El sistema generará el gráfico de barras en esta sección. No es necesario que escribas nada aquí).\n\n\n"
+                + "## 5. Propuesta de Tendencias\n"
+                + "Analiza los ingredientes más recurrentes del Top Demanda y propone una nueva combinación de postre que podría tener alta aceptación. Explica la propuesta en formato speech o párrafo estratégico, justificando:\n- por qué los ingredientes elegidos son coherentes con las preferencias del cliente\n- cómo esta combinación aporta variedad al menú.\n\n"
+                + "## 6. Análisis de Costos\n"
+                + "Construye una tabla Markdown comparando la combinación Top Demanda y la nueva combinación propuesta. La tabla debe incluir:\n| Tipo de combinación | Bizcocho | Relleno | Cobertura | Costo estimado por gramo (COP) | Costo por porción (150g) |\nUtiliza valores de costos estimados razonables.\n\n"
+                + "## 7. Visualización de Composición\n\n"
+                + "### Gráfico 1: Composición y Costo del Postre Top Demanda\n"
+                + "(El sistema generará aquí el gráfico de torta. DEBES seguir proveyendo el bloque JSON 'TOP_DEMAND_JSON' con los datos de costo requeridos).\n\n"
+                + "### Gráfico 2: Composición y Costo del Postre Propuesto\n"
+                + "(El sistema generará aquí el gráfico de torta. DEBES seguir proveyendo el bloque JSON 'PROPUESTA_JSON' con los datos de costo requeridos).\n\n"
+                + "## 8. Conclusión Estratégica\n"
+                + "Redacta una conclusión breve que explique:\n- qué aprendimos sobre el comportamiento del cliente\n- qué oportunidad de producto existe\n- cómo este análisis puede ayudar a mejorar las decisiones operativas del negocio.\n\n"
+                + "--- Reglas generales ---\n"
+                + "- Responder en formato Markdown.\n"
+                + "- Incluir tablas claras.\n"
+                + "- Incluir los gráficos solicitados.\n"
+                + "- El análisis debe ser interpretativo y estratégico, no solo descriptivo.\n\n"
+                + "--- INSTRUCCIONES CRÍTICAS PARA GRÁFICOS ---\n"
+                + "Para que el sistema genere los gráficos de torta, DEBES proporcionar los datos en bloques JSON ocultos separados. Asegúrate de que los nombres de ingredientes y costos sean consistentes con tu análisis en la tabla anterior.\n"
+                + "<!-- TOP_DEMAND_JSON\n{\n  \"bizcocho\": \"(nombre bizcocho top)\", \"costo_bizcocho\": (valor),\n  \"relleno\": \"(nombre relleno top)\", \"costo_relleno\": (valor),\n  \"cobertura\": \"(nombre cobertura top)\", \"costo_cobertura\": (valor)\n}\n-->\n\n"
+                + "<!-- PROPUESTA_JSON\n{\n  \"bizcocho\": \"(nombre bizcocho propuesto)\", \"costo_bizcocho\": (valor),\n  \"relleno\": \"(nombre relleno propuesto)\", \"costo_relleno\": (valor),\n  \"cobertura\": \"(nombre cobertura propuesto)\", \"costo_cobertura\": (valor)\n}\n-->\n";
     }
 
     private byte[] generatePdf(String markdownText, List<Map<String, Object>> topCombinations) throws DocumentException, IOException {
@@ -128,123 +129,146 @@ public class ReportServiceImpl implements ReportService {
             Document document = new Document();
             PdfWriter.getInstance(document, baos);
             document.open();
-
-            // 1. Add all AI-generated text content (analysis, proposal, cost table)
-            addMarkdownContent(document, markdownText);
-
-            // 2. Add the historical data bar chart on a new page
-            document.newPage();
-            addBarChart(document, topCombinations);
-
-            // 3. Add the new proposal pie chart on another new page
-            document.newPage();
-            addPieChart(document, markdownText);
-
+            addMarkdownContent(document, markdownText, topCombinations);
             document.close();
             return baos.toByteArray();
         }
     }
 
-    private void addMarkdownContent(Document document, String markdownText) throws DocumentException {
+    private void addMarkdownContent(Document document, String markdownText, List<Map<String, Object>> topCombinations) throws DocumentException, IOException {
         String[] lines = markdownText.split("\n");
         PdfPTable table = null;
         boolean inTable = false;
+        boolean skippingJsonBlock = false;
 
         for (String line : lines) {
-            line = line.trim();
-            if (line.isEmpty() || line.startsWith("<!--")) {
+            String trimmedLine = line.trim();
+
+            if (trimmedLine.startsWith("<!--")) {
+                skippingJsonBlock = true;
+            }
+
+            if (skippingJsonBlock) {
+                if (trimmedLine.endsWith("-->")) {
+                    skippingJsonBlock = false;
+                }
                 continue;
             }
 
-            if (line.startsWith("# ")) {
-                flushTable(document, table);
-                table = null; inTable = false;
-                addParagraph(document, line.substring(2), TITLE_FONT, Element.ALIGN_CENTER, 20f);
-            } else if (line.startsWith("## ")) {
-                flushTable(document, table);
-                table = null; inTable = false;
-                addParagraph(document, line.substring(3), SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
-            } else if (line.startsWith("|")) {
+            if (trimmedLine.isEmpty() || trimmedLine.contains("(El sistema generará")) {
+                continue;
+            }
+
+            if (trimmedLine.contains("## 4. Gráfico de Demanda")) {
+                flushTable(document, table); inTable = false; table = null;
+                addParagraph(document, "4. Gráfico de Demanda", SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
+                addBarChart(document, topCombinations);
+                document.add(new Paragraph(" ")); // Salto de seguridad
+                continue;
+            } else if (trimmedLine.contains("### Gráfico 1")) {
+                flushTable(document, table); inTable = false; table = null;
+                createAndAddPieChart(document, markdownText, "TOP_DEMAND_JSON", "Gráfico 1: Composición y Costo del Postre Top Demanda");
+                document.add(new Paragraph(" ")); // Salto de seguridad
+                continue; 
+            } else if (trimmedLine.contains("### Gráfico 2")) {
+                flushTable(document, table); inTable = false; table = null;
+                createAndAddPieChart(document, markdownText, "PROPUESTA_JSON", "Gráfico 2: Composición y Costo del Postre Propuesto");
+                document.add(new Paragraph(" ")); // Salto de seguridad
+                continue;
+            }
+
+            if (trimmedLine.startsWith("# ")) {
+                flushTable(document, table); inTable = false; table = null;
+                addParagraph(document, trimmedLine.substring(2), TITLE_FONT, Element.ALIGN_CENTER, 20f);
+            } else if (trimmedLine.startsWith("## ")) {
+                flushTable(document, table); inTable = false; table = null;
+                if (trimmedLine.startsWith("## 8.")) { // Check if it's section 8
+                    document.add(new Paragraph(" ")); // Add the extra break
+                }
+                addParagraph(document, trimmedLine.substring(3), SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
+            } else if (trimmedLine.startsWith("### ")) {
+                flushTable(document, table); inTable = false; table = null;
+                addParagraph(document, trimmedLine.substring(4), SUB_SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
+            } else if (trimmedLine.startsWith("|")) {
                 if (!inTable) {
                     inTable = true;
-                    String[] headers = Arrays.stream(line.split("\\|")).map(String::trim).filter(s -> !s.isEmpty()).toArray(String[]::new);
+                    String[] headers = Arrays.stream(trimmedLine.split("\\|")).map(String::trim).filter(s -> !s.isEmpty()).toArray(String[]::new);
                     table = new PdfPTable(headers.length);
                     table.setWidthPercentage(100);
                     table.setSpacingBefore(10f);
                     table.setSpacingAfter(10f);
                     addTableHeader(table, headers);
-                } else if (!line.contains("---")) {
-                    String[] cells = Arrays.stream(line.split("\\|")).map(String::trim).filter(s -> !s.isEmpty()).toArray(String[]::new);
-                    if (cells.length == table.getNumberOfColumns()) {
+                } else if (!trimmedLine.contains("---")) {
+                    String[] cells = Arrays.stream(trimmedLine.split("\\|")).map(String::trim).filter(s -> !s.isEmpty()).toArray(String[]::new);
+                    if (table != null && cells.length == table.getNumberOfColumns()) {
                         addTableRow(table, cells);
                     }
                 }
-            } else if (line.startsWith(">")) {
-                flushTable(document, table);
-                table = null; inTable = false;
-                 addParagraph(document, line.substring(1).trim(), NORMAL_FONT, Element.ALIGN_JUSTIFIED, 12f);
-            }else {
-                flushTable(document, table);
-                table = null; inTable = false;
-                addParagraph(document, line, NORMAL_FONT, Element.ALIGN_JUSTIFIED, 12f);
+            } else if (trimmedLine.startsWith(">")) {
+                flushTable(document, table); inTable = false; table = null;
+                addParagraph(document, trimmedLine.substring(1).trim(), NORMAL_FONT, Element.ALIGN_JUSTIFIED, 12f);
+            } else {
+                flushTable(document, table); inTable = false; table = null;
+                addParagraph(document, trimmedLine, NORMAL_FONT, Element.ALIGN_JUSTIFIED, 12f);
             }
         }
         flushTable(document, table);
     }
 
-    private void addPieChart(Document document, String aiResponse) throws DocumentException, IOException {
-        addParagraph(document, "Composición del Postre Propuesto", SUBTITLE_FONT, Element.ALIGN_CENTER, 20f);
+    private void createAndAddPieChart(Document document, String aiResponse, String jsonBlockId, String chartTitle) throws DocumentException, IOException {
+        if (chartTitle != null && !chartTitle.isEmpty()) {
+            addParagraph(document, chartTitle, SUB_SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
+        }
 
-        Pattern pattern = Pattern.compile("<!-- PROPUESTA_JSON(.*?)-->", Pattern.DOTALL);
+        Pattern pattern = Pattern.compile("<!-- " + jsonBlockId + "(.*?)-->", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(aiResponse);
 
         if (!matcher.find()) {
-            document.add(new Paragraph("No se pudo encontrar la propuesta de postre en la respuesta de la IA.", NORMAL_FONT));
+            document.add(new Paragraph("[Error: No se encontró el bloque de datos JSON '" + jsonBlockId + "' para generar el gráfico.]", NORMAL_FONT));
             return;
         }
 
         String json = matcher.group(1).trim();
-        Map<String, String> proposal;
+        Map<String, Object> data;
         try {
-            proposal = objectMapper.readValue(json, new TypeReference<Map<String, String>>() {});
+            data = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {});
         } catch (IOException e) {
-            document.add(new Paragraph("Error al procesar la propuesta de postre (JSON mal formado): " + e.getMessage(), NORMAL_FONT));
+            document.add(new Paragraph("[Error al procesar datos JSON para '" + jsonBlockId + "': " + e.getMessage() + "]", NORMAL_FONT));
             return;
         }
 
         DefaultPieDataset dataset = new DefaultPieDataset();
-        dataset.setValue(String.format("%s (Bizcocho)", proposal.getOrDefault("bizcocho", "N/A")), 50);
-        dataset.setValue(String.format("%s (Relleno)", proposal.getOrDefault("relleno", "N/A")), 35);
-        dataset.setValue(String.format("%s (Cobertura)", proposal.getOrDefault("cobertura", "N/A")), 15);
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new java.util.Locale("es", "CO"));
+        currencyFormat.setMaximumFractionDigits(0);
 
-        JFreeChart chart = ChartFactory.createPieChart(
-                null, 
-                dataset,
-                true, 
-                true,
-                false);
+        double costoBizcocho = ((Number) data.getOrDefault("costo_bizcocho", 0)).doubleValue();
+        double costoRelleno = ((Number) data.getOrDefault("costo_relleno", 0)).doubleValue();
+        double costoCobertura = ((Number) data.getOrDefault("costo_cobertura", 0)).doubleValue();
 
+        dataset.setValue(String.format("%s - %s", data.getOrDefault("bizcocho", "N/A"), currencyFormat.format(costoBizcocho)), 50);
+        dataset.setValue(String.format("%s - %s", data.getOrDefault("relleno", "N/A"), currencyFormat.format(costoRelleno)), 35);
+        dataset.setValue(String.format("%s - %s", data.getOrDefault("cobertura", "N/A"), currencyFormat.format(costoCobertura)), 15);
+
+        JFreeChart chart = ChartFactory.createPieChart(null, dataset, true, true, false);
         PiePlot plot = (PiePlot) chart.getPlot();
-        plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{2}", NumberFormat.getPercentInstance(), NumberFormat.getPercentInstance()));
-        plot.setLabelFont(new java.awt.Font("SansSerif", java.awt.Font.PLAIN, 12));
+        plot.setLabelGenerator(new StandardPieSectionLabelGenerator("{0} ({2})"));
+        plot.setLabelFont(new java.awt.Font("SansSerif", java.awt.Font.BOLD, 10));
         plot.setBackgroundPaint(java.awt.Color.WHITE);
         plot.setOutlineVisible(false);
         plot.setLegendLabelGenerator(new StandardPieSectionLabelGenerator("{0}"));
-
 
         BufferedImage bufferedImage = chart.createBufferedImage(550, 400);
         Image image = Image.getInstance(bufferedImage, null);
         image.setAlignment(Element.ALIGN_CENTER);
         image.scaleToFit(500, 350);
-        image.setSpacingBefore(10f);
         document.add(image);
     }
 
     private void addBarChart(Document document, List<Map<String, Object>> data) throws DocumentException {
-        addParagraph(document, "Top 5 Combinaciones Más Demandadas", SUBTITLE_FONT, Element.ALIGN_CENTER, 20f);
+        addParagraph(document, "Top 5 Combinaciones Más Demandadas", SUB_SUBTITLE_FONT, Element.ALIGN_CENTER, 10f);
 
         if (data == null || data.isEmpty()) {
-            document.add(new Paragraph("No se encontraron datos de tendencias para generar el gráfico de barras.", NORMAL_FONT));
+            document.add(new Paragraph("[No se encontraron datos de tendencias para generar el gráfico de barras.]", NORMAL_FONT));
             return;
         }
 
@@ -255,13 +279,13 @@ public class ReportServiceImpl implements ReportService {
 
         PdfPTable chartTable = new PdfPTable(3);
         chartTable.setWidthPercentage(100);
-        chartTable.setWidths(new float[]{4, 4, 1});
-        chartTable.setSpacingBefore(15f);
-        chartTable.setSpacingAfter(25f);
+        try { chartTable.setWidths(new float[]{4, 4, 1}); } catch (Exception e) {}
+        chartTable.setSpacingBefore(10f);
+        chartTable.setSpacingAfter(20f);
         chartTable.getDefaultCell().setBorder(Rectangle.NO_BORDER);
         chartTable.getDefaultCell().setVerticalAlignment(Element.ALIGN_MIDDLE);
 
-        Font labelFont = FontFactory.getFont(FontFactory.HELVETICA, 9);
+        Font labelFont = FontFactory.getFont(FontFactory.HELVETICA, 8);
         BaseColor barColor = new BaseColor(70, 130, 180);
 
         for (Map<String, Object> row : data) {
@@ -285,7 +309,7 @@ public class ReportServiceImpl implements ReportService {
             barWrapperTable.setHorizontalAlignment(Element.ALIGN_LEFT);
 
             PdfPCell innerBarCell = new PdfPCell(new Phrase(" "));
-            innerBarCell.setFixedHeight(15f);
+            innerBarCell.setFixedHeight(12f);
             innerBarCell.setBackgroundColor(barColor);
             innerBarCell.setBorder(Rectangle.NO_BORDER);
             barWrapperTable.addCell(innerBarCell);
@@ -305,6 +329,7 @@ public class ReportServiceImpl implements ReportService {
         }
         document.add(chartTable);
     }
+
     private void flushTable(Document document, PdfPTable table) throws DocumentException {
         if (table != null) {
             document.add(table);
