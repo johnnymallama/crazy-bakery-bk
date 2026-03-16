@@ -3,144 +3,168 @@ package uan.edu.co.crazy_bakery.application.services.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.itextpdf.text.DocumentException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.jdbc.core.JdbcTemplate;
-import uan.edu.co.crazy_bakery.application.dto.requests.ReportRequestDTO;
 
 import java.io.IOException;
-import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class ReportServiceImplTest {
 
     @Mock
     private ChatClient.Builder chatClientBuilder;
 
-    @Mock
+    // This mock will be initialized as a deep stub in setUp()
     private ChatClient chatClient;
-
-    @Mock
-    private ChatClient.ChatClientRequestSpec chatClientRequestSpec;
-
-    @Mock
-    private ChatClient.CallResponseSpec callResponseSpec;
 
     @Mock
     private JdbcTemplate jdbcTemplate;
 
+    @InjectMocks
     private ReportServiceImpl reportService;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        // Use RETURNS_DEEP_STUBS to handle the fluent API chain
+        chatClient = Mockito.mock(ChatClient.class, Mockito.RETURNS_DEEP_STUBS);
         when(chatClientBuilder.build()).thenReturn(chatClient);
         reportService = new ReportServiceImpl(chatClientBuilder, jdbcTemplate, new ObjectMapper());
     }
 
-    @Test
-    void testGenerateReport_retornaByteArrayNoVacio() throws IOException, DocumentException {
-        // Arrange
-        ReportRequestDTO requestDTO = new ReportRequestDTO();
-        requestDTO.setReportId("reporte_estrategico");
-        requestDTO.setStartDate(LocalDate.now().minusDays(7));
-        requestDTO.setEndDate(LocalDate.now());
+    private void mockDatabase() {
+        when(jdbcTemplate.queryForList(anyString())).thenReturn(new ArrayList<>());
+        when(jdbcTemplate.queryForObject(anyString(), (Class<Long>) any(Class.class))).thenReturn(50L);
+    }
 
-        // Mock jdbcTemplate para las dos consultas SQL
-        List<Map<String, Object>> topCombinations = Collections.singletonList(
-                Map.of("bizcocho", "Vainilla", "relleno", "Fresa", "cobertura", "Chocolate", "cantidad_pedidos", 5)
-        );
-        List<Map<String, Object>> newIngredients = Collections.singletonList(
-                Map.of("nombre", "Canela", "costo_por_gramo", 100.0)
-        );
+    private void mockAiResponse(String content) {
+        // With deep stubs, we only need to mock the final call in the chain.
+        when(chatClient.prompt().user(anyString()).call().content()).thenReturn(content);
+    }
 
-        when(jdbcTemplate.queryForList(anyString()))
-                .thenReturn(topCombinations)
-                .thenReturn(newIngredients);
+    private String getValidAnalysisMarkdown() {
+        return "# Análisis Estratégico\n"
+            + "## 1. Resumen Ejecutivo\n"
+            + "Resumen de prueba.\n"
+            + "## 2. Análisis de Tendencias\n"
+            + "Análisis de prueba.\n"
+            + "## 3. Top Demanda\n"
+            + "| Combinación | Pedidos |\n|---|---|\n| Vainilla + Fresa | 10 |\n"
+            + "## 4. Gráfico de Demanda\n"
+            + "(placeholder para gráfico)\n"
+            + "## 5. Propuesta de Tendencias\n"
+            + "Propuesta de prueba.\n"
+            + "## 6. Análisis de Costos\n"
+            + "| Tipo | Costo |\n|---|---|\n| Top | 100 |\n| Propuesta | 120 |\n"
+            + "## 7. Visualización de Composición\n"
+            + "### Gráfico 1: Composición y Costo del Postre Top Demanda\n"
+            + "(placeholder para gráfico 1)\n"
+            + "### Gráfico 2: Composición y Costo del Postre Propuesto\n"
+            + "(placeholder para gráfico 2)\n"
+            + "## 8. Conclusión Estratégica\n"
+            + "Conclusión de prueba.\n"
+            + "<!-- TOP_DEMAND_JSON\n{\"bizcocho\":\"Vainilla\",\"costo_bizcocho\":100,\"relleno\":\"Fresa\",\"costo_relleno\":50,\"cobertura\":\"Chocolate\",\"costo_cobertura\":75}-->\n"
+            + "<!-- PROPUESTA_JSON\n{\"bizcocho\":\"Chocolate\",\"costo_bizcocho\":120,\"relleno\":\"Arequipe\",\"costo_relleno\":60,\"cobertura\":\"Crema\",\"costo_cobertura\":80}-->";
+    }
 
-        // Mock ChatClient chain
-        String markdownContent = "# Top Ingredientes\n\n## Descripción Reporte.\n> Análisis estratégico.\n\n## Contenido\n\n| Bizcocho | Relleno | Cobertura | Cantidad |\n|---|---|---|---|\n| Vainilla | Fresa | Chocolate | 5 |\n";
-        when(chatClient.prompt()).thenReturn(chatClientRequestSpec);
-        when(chatClientRequestSpec.user(anyString())).thenReturn(chatClientRequestSpec);
-        when(chatClientRequestSpec.call()).thenReturn(callResponseSpec);
-        when(callResponseSpec.content()).thenReturn(markdownContent);
-
-        // Act
-        byte[] result = reportService.generateReport(requestDTO);
-
-        // Assert
-        assertNotNull(result);
-        assertTrue(result.length > 0);
+    private String getValidStrategyMarkdown() {
+        return "# Reporte Estratégico\n"
+            + "## 1. Resumen Ejecutivo\n"
+            + "Resumen de prueba.\n"
+            + "## 2. Ingredientes Más Utilizados\n"
+            + "(placeholder para tablas)\n"
+            + "## 3. Visualización de Uso de Ingredientes\n"
+            + "(placeholder para gráficos)\n"
+            + "## 4. Ingredientes Poco Utilizados\n"
+            + "Análisis de poco utilizados.\n"
+            + "## 5. Conclusión Estratégica\n"
+            + "Conclusión de prueba.";
     }
 
     @Test
-    void testGenerateReport_conMarkdownSencillo_retornaByteArrayNoVacio() throws IOException, DocumentException {
+    @DisplayName("generateIngredientAnalysisReport - Success Case")
+    void testGenerateIngredientAnalysisReport_Success() throws IOException, DocumentException {
         // Arrange
-        ReportRequestDTO requestDTO = new ReportRequestDTO();
-        requestDTO.setReportId("reporte_estrategico");
-
-        // Mock jdbcTemplate
-        when(jdbcTemplate.queryForList(anyString()))
-                .thenReturn(Collections.emptyList())
-                .thenReturn(Collections.emptyList());
-
-        // Mock ChatClient con markdown sencillo (sin tablas)
-        String markdownContent = "# Título del Reporte\n\n## Sección 1\n\nEste es un párrafo normal del análisis.\n\n## Sección 2\n\nOtro párrafo con ```codigo``` que debe ignorarse.\n";
-        when(chatClient.prompt()).thenReturn(chatClientRequestSpec);
-        when(chatClientRequestSpec.user(anyString())).thenReturn(chatClientRequestSpec);
-        when(chatClientRequestSpec.call()).thenReturn(callResponseSpec);
-        when(callResponseSpec.content()).thenReturn(markdownContent);
+        mockDatabase();
+        mockAiResponse(getValidAnalysisMarkdown());
 
         // Act
-        byte[] result = reportService.generateReport(requestDTO);
+        byte[] pdf = reportService.generateIngredientAnalysisReport();
 
         // Assert
-        assertNotNull(result);
-        assertTrue(result.length > 0);
+        assertNotNull(pdf);
+        assertTrue(pdf.length > 0);
     }
 
     @Test
-    void testGenerateReport_conLineasEspeciales_retornaByteArrayNoVacio() throws IOException, DocumentException {
-        // Arrange: cubre ramas de líneas vacías, ---INICIO/---FIN, y tabla con separador ---
-        ReportRequestDTO requestDTO = new ReportRequestDTO();
-        requestDTO.setReportId("reporte_estrategico");
-
-        when(jdbcTemplate.queryForList(anyString()))
-                .thenReturn(Collections.emptyList())
-                .thenReturn(Collections.emptyList());
-
-        // Markdown con líneas especiales para cubrir todas las ramas del parser
-        String markdownContent = "---INICIO seccion---\n"
-                + "\n"
-                + "---FIN seccion---\n"
-                + "# Reporte con Tabla\n"
-                + "| Col1 | Col2 |\n"
-                + "|------|------|\n"
-                + "| val1 | val2 |\n"
-                + "## Subtítulo\n"
-                + "Párrafo después de tabla.\n";
-
-        when(chatClient.prompt()).thenReturn(chatClientRequestSpec);
-        when(chatClientRequestSpec.user(anyString())).thenReturn(chatClientRequestSpec);
-        when(chatClientRequestSpec.call()).thenReturn(callResponseSpec);
-        when(callResponseSpec.content()).thenReturn(markdownContent);
+    @DisplayName("generateIngredientStrategyReport - Success Case")
+    void testGenerateIngredientStrategyReport_Success() throws IOException, DocumentException {
+        // Arrange
+        mockDatabase();
+        mockAiResponse(getValidStrategyMarkdown());
 
         // Act
-        byte[] result = reportService.generateReport(requestDTO);
+        byte[] pdf = reportService.generateIngredientStrategyReport();
 
         // Assert
-        assertNotNull(result);
-        assertTrue(result.length > 0);
+        assertNotNull(pdf);
+        assertTrue(pdf.length > 0);
+    }
+
+    @Test
+    @DisplayName("generateIngredientAnalysisReport - Partial AI Response")
+    void testGenerateIngredientAnalysisReport_PartialResponse() throws IOException, DocumentException {
+        // Arrange
+        mockDatabase();
+        String partialContent = "# Análisis Parcial\n## 1. Resumen Ejecutivo\nContenido parcial.";
+        mockAiResponse(partialContent);
+
+        // Act
+        byte[] pdf = reportService.generateIngredientAnalysisReport();
+
+        // Assert
+        // Should still generate a PDF, even if it's not the complete report
+        assertNotNull(pdf);
+        assertTrue(pdf.length > 0);
+    }
+
+
+    @Test
+    @DisplayName("generateIngredientAnalysisReport - AI Returns Empty Content")
+    void testGenerateAnalysisReport_EmptyAiResponse() {
+        // Arrange
+        mockDatabase();
+        mockAiResponse("");
+
+        // Act & Assert
+        Exception exception = assertThrows(DocumentException.class, () -> reportService.generateIngredientAnalysisReport());
+        assertEquals("La respuesta de la IA está vacía. No se puede generar el reporte.", exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("generateIngredientStrategyReport - AI Returns Empty Content")
+    void testGenerateStrategyReport_EmptyAiResponse() {
+        // Arrange
+        mockDatabase();
+        mockAiResponse("");
+
+        // Act & Assert
+        Exception exception = assertThrows(DocumentException.class, () -> reportService.generateIngredientStrategyReport());
+        assertEquals("La respuesta de la IA está vacía. No se puede generar el reporte.", exception.getMessage());
     }
 }
