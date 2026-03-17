@@ -12,8 +12,6 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.data.general.DefaultPieDataset;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -37,8 +35,6 @@ import java.util.stream.Stream;
 
 @Service
 public class ReportServiceImpl implements ReportService {
-
-    private static final Logger log = LoggerFactory.getLogger(ReportServiceImpl.class);
 
     private final ChatClient chatClient;
     private final JdbcTemplate jdbcTemplate;
@@ -70,8 +66,6 @@ public class ReportServiceImpl implements ReportService {
         if (analysis == null || analysis.trim().isEmpty()) {
             throw new DocumentException("La respuesta de la IA está vacía. No se puede generar el reporte.");
         }
-
-        log.info("=== RESPUESTA IA (analysis) ===\n{}", analysis);
 
         // Inyectar TOP_DEMAND_JSON con datos reales de BD (reemplaza o agrega el bloque)
         @SuppressWarnings("unchecked")
@@ -387,7 +381,6 @@ public class ReportServiceImpl implements ReportService {
         Matcher matcher = pattern.matcher(aiResponse);
 
         if (!matcher.find()) {
-            log.warn("No se encontró el bloque JSON '{}' en la respuesta de la IA. Respuesta recibida:\n{}", jsonBlockId, aiResponse);
             document.add(new Paragraph("[Error: No se encontró el bloque de datos JSON '" + jsonBlockId + "' para generar el gráfico.]", NORMAL_FONT));
             return;
         }
