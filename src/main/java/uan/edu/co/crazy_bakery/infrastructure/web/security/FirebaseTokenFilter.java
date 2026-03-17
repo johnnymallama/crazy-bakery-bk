@@ -26,7 +26,10 @@ public class FirebaseTokenFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         String uri = request.getRequestURI();
 
-        return ("POST".equalsIgnoreCase(method) && "/usuarios".equalsIgnoreCase(uri))
+        boolean isSwagger = uri.startsWith("/swagger-ui") || uri.startsWith("/v3/api-docs");
+
+        return isSwagger
+                || ("POST".equalsIgnoreCase(method) && "/usuarios".equalsIgnoreCase(uri))
                 || ("GET".equalsIgnoreCase(method) && "/receta/ultimas-imagenes".equalsIgnoreCase(uri))
                 || ("GET".equalsIgnoreCase(method) && uri.startsWith("/geografia/"))
                 || ("GET".equalsIgnoreCase(method) && uri.startsWith("/tamanos/tipo-receta/"))

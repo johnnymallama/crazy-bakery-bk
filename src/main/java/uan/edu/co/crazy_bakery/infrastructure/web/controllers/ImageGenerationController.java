@@ -1,5 +1,9 @@
 package uan.edu.co.crazy_bakery.infrastructure.web.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +17,7 @@ import uan.edu.co.crazy_bakery.application.services.ImageGenerationService;
 
 import java.util.Map;
 
+@Tag(name = "Generación de imágenes", description = "Generación de imágenes de tortas con IA (DALL-E 3)")
 @RestController
 @RequestMapping("/generate-image")
 public class ImageGenerationController {
@@ -23,6 +28,11 @@ public class ImageGenerationController {
         this.imageGenerationService = imageGenerationService;
     }
 
+    @Operation(summary = "Generar imagen desde prompt", description = "Genera una imagen a partir de un prompt libre usando DALL-E 3 y la almacena en Firebase Storage")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Imagen generada exitosamente, retorna la URL pública"),
+        @ApiResponse(responseCode = "400", description = "El prompt está vacío o es inválido")
+    })
     @PostMapping
     public ResponseEntity<?> generateImage(@RequestBody Map<String, String> request) {
         String prompt = request.get("prompt");
@@ -34,6 +44,11 @@ public class ImageGenerationController {
         return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
     }
 
+    @Operation(summary = "Generar imagen de torta personalizada", description = "Genera una imagen de torta personalizada según el tipo de receta y atributos proporcionados")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Imagen generada exitosamente"),
+        @ApiResponse(responseCode = "400", description = "El tipo de receta es obligatorio")
+    })
     @PostMapping("/custom-cake")
     public ResponseEntity<GeneratedImageResponseDTO> generateCustomCakeImage(@Valid @RequestBody CustomCakeImageRequestDTO requestDTO) {
         if (requestDTO.getTipoReceta() == null || requestDTO.getTipoReceta().trim().isEmpty()) {

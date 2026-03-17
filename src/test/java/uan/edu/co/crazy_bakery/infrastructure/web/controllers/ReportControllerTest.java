@@ -15,6 +15,7 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 
 class ReportControllerTest {
 
@@ -63,5 +64,23 @@ class ReportControllerTest {
         assertTrue(response.getBody().length > 0);
         assertEquals(MediaType.APPLICATION_PDF, response.getHeaders().getContentType());
         assertTrue(response.getHeaders().getContentDisposition().toString().contains("reporte_estrategia_de_ingredientes.pdf"));
+    }
+
+    @Test
+    void testGenerateIngredientAnalysisReport_lanzaIOException() throws IOException, DocumentException {
+        // Arrange
+        when(reportService.generateIngredientAnalysisReport()).thenThrow(new IOException("Error de lectura"));
+
+        // Act & Assert
+        assertThrows(IOException.class, () -> reportController.generateIngredientAnalysisReport());
+    }
+
+    @Test
+    void testGenerateIngredientStrategyReport_lanzaIOException() throws IOException, DocumentException {
+        // Arrange
+        when(reportService.generateIngredientStrategyReport()).thenThrow(new IOException("Error de lectura"));
+
+        // Act & Assert
+        assertThrows(IOException.class, () -> reportController.generateIngredientStrategyReport());
     }
 }
