@@ -116,7 +116,7 @@ public class ReportServiceImpl implements ReportService {
         return "Actúa como un analista de datos especializado en inteligencia de ingredientes para una pastelería de repostería personalizada.\n\n"
             + "---FUENTE DE DATOS---\n" + jsonData + "\n---FIN FUENTE DE DATOS---\n\n"
             + "Usando la base de datos JSON de combinaciones vendidas, genera un **reporte estratégico de ingredientes** cuyo objetivo es identificar patrones de uso, optimizar inventarios y apoyar la toma de decisiones operativas del negocio.\n\n"
-            + "Responde en formato Markdown.\n\n"
+            + "Responde en formato Markdown. OBLIGATORIO: incluir TODAS las secciones numeradas del 1 al 5 con sus encabezados exactos.\n\n"
             + "# Reporte Estratégico de Ingredientes\n\n"
             + "## 1. Resumen Ejecutivo\n\n"
             + "Redacta un resumen breve explicando:\n"
@@ -125,19 +125,15 @@ public class ReportServiceImpl implements ReportService {
             + "- Qué ingrediente domina en rellenos\n"
             + "- Qué ingrediente domina en coberturas\n"
             + "- Qué oportunidad existe para optimizar compras.\n\n"
-            + "---\n\n"
             + "## 2. Ingredientes Más Utilizados\n\n"
-            + "(El sistema generará las tablas de frecuencia para Bizcochos, Rellenos y Coberturas en esta sección.)\n\n"
-            + "---\n\n"
+            + "ESCRIBE EXACTAMENTE esta línea y nada más en esta sección: (El sistema generará las tablas de frecuencia aquí).\n\n"
             + "## 3. Visualización de Uso de Ingredientes\n\n"
-            + "(El sistema generará los gráficos de popularidad para Bizcochos, Rellenos y Coberturas en esta sección.)\n\n"
-            + "---\n\n"
+            + "ESCRIBE EXACTAMENTE esta línea y nada más en esta sección: (El sistema generará los gráficos de popularidad aquí).\n\n"
             + "## 4. Ingredientes Poco Utilizados\n\n"
             + "Usando la lista `ingredientesPocoUtilizados` de la fuente de datos, construye la tabla. Después, explica brevemente por qué estos ingredientes podrían representar:\n\n"
             + "- baja demanda\n"
             + "- oportunidad de innovación\n"
             + "- o exceso de inventario.\n\n"
-            + "---\n\n"
             + "## 5. Conclusión Estratégica\n\n"
             + "Redacta una conclusión explicando:\n\n"
             + "- qué ingredientes deberían comprarse más\n"
@@ -255,6 +251,8 @@ public class ReportServiceImpl implements ReportService {
         boolean barChartRendered = false;
         boolean pieChart1Rendered = false;
         boolean pieChart2Rendered = false;
+        boolean strategyTablesRendered = false;
+        boolean strategyChartsRendered = false;
 
         for (String line : lines) {
             String trimmedLine = line.trim();
@@ -290,7 +288,7 @@ public class ReportServiceImpl implements ReportService {
                 document.add(new Paragraph(" "));
                 pieChart2Rendered = true;
                 continue;
-            } else if (reportType.equals("strategy") && trimmedLine.contains("## 2. Ingredientes Más Utilizados")) {
+            } else if (reportType.equals("strategy") && trimmedLine.startsWith("##") && lowerLine.contains("2.") && lowerLine.contains("ingredientes")) {
                 flushTable(document, table); inTable = false; table = null;
                 addParagraph(document, "2. Ingredientes Más Utilizados", SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
                 addFrequencyTable(document, (List<Map<String, Object>>) data.get("frecuenciaBizcochos"), "Bizcochos más usados");
@@ -299,8 +297,9 @@ public class ReportServiceImpl implements ReportService {
                 document.add(new Paragraph(" "));
                 addFrequencyTable(document, (List<Map<String, Object>>) data.get("frecuenciaCoberturas"), "Coberturas más usadas");
                 document.add(new Paragraph(" "));
+                strategyTablesRendered = true;
                 continue;
-            } else if (reportType.equals("strategy") && trimmedLine.contains("## 3. Visualización de Uso de Ingredientes")) {
+            } else if (reportType.equals("strategy") && trimmedLine.startsWith("##") && lowerLine.contains("3.") && lowerLine.contains("visualizaci")) {
                 flushTable(document, table); inTable = false; table = null;
                 addParagraph(document, "3. Visualización de Uso de Ingredientes", SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
                 addGenericBarChart(document, (List<Map<String, Object>>) data.get("frecuenciaBizcochos"), "Popularidad de Bizcochos");
@@ -309,6 +308,7 @@ public class ReportServiceImpl implements ReportService {
                 document.add(new Paragraph(" "));
                 addGenericBarChart(document, (List<Map<String, Object>>) data.get("frecuenciaCoberturas"), "Popularidad de Coberturas");
                 document.add(new Paragraph(" "));
+                strategyChartsRendered = true;
                 continue;
             } else if (trimmedLine.isEmpty() || trimmedLine.startsWith("(El sistema generará")) {
                 continue;
@@ -320,7 +320,7 @@ public class ReportServiceImpl implements ReportService {
                 addParagraph(document, trimmedLine.substring(2), TITLE_FONT, Element.ALIGN_CENTER, 20f);
             } else if (trimmedLine.startsWith("## ")) {
                 flushTable(document, table); inTable = false; table = null;
-                // Antes de la sección 8, insertar gráficas pendientes en orden correcto
+                // Antes de la sección 8 (analysis), insertar gráficas pendientes en orden correcto
                 if (reportType.equals("analysis") && trimmedLine.startsWith("## 8.")) {
                     if (!barChartRendered) {
                         addParagraph(document, "4. Gráfico de Demanda", SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
@@ -337,6 +337,29 @@ public class ReportServiceImpl implements ReportService {
                         createAndAddPieChart(document, markdownText, "PROPUESTA_JSON", "Gráfico 2: Composición y Costo del Postre Propuesto");
                         document.add(new Paragraph(" "));
                         pieChart2Rendered = true;
+                    }
+                    document.add(new Paragraph(" "));
+                // Antes de la sección 4 (strategy), insertar tablas y gráficas pendientes en orden correcto
+                } else if (reportType.equals("strategy") && lowerLine.contains("4.")) {
+                    if (!strategyTablesRendered) {
+                        addParagraph(document, "2. Ingredientes Más Utilizados", SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
+                        addFrequencyTable(document, (List<Map<String, Object>>) data.get("frecuenciaBizcochos"), "Bizcochos más usados");
+                        document.add(new Paragraph(" "));
+                        addFrequencyTable(document, (List<Map<String, Object>>) data.get("frecuenciaRellenos"), "Rellenos más usados");
+                        document.add(new Paragraph(" "));
+                        addFrequencyTable(document, (List<Map<String, Object>>) data.get("frecuenciaCoberturas"), "Coberturas más usadas");
+                        document.add(new Paragraph(" "));
+                        strategyTablesRendered = true;
+                    }
+                    if (!strategyChartsRendered) {
+                        addParagraph(document, "3. Visualización de Uso de Ingredientes", SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
+                        addGenericBarChart(document, (List<Map<String, Object>>) data.get("frecuenciaBizcochos"), "Popularidad de Bizcochos");
+                        document.add(new Paragraph(" "));
+                        addGenericBarChart(document, (List<Map<String, Object>>) data.get("frecuenciaRellenos"), "Popularidad de Rellenos");
+                        document.add(new Paragraph(" "));
+                        addGenericBarChart(document, (List<Map<String, Object>>) data.get("frecuenciaCoberturas"), "Popularidad de Coberturas");
+                        document.add(new Paragraph(" "));
+                        strategyChartsRendered = true;
                     }
                     document.add(new Paragraph(" "));
                 } else if (trimmedLine.startsWith("## 5.")) {
@@ -580,9 +603,17 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private void addParagraph(Document document, String text, Font font, int alignment, float spacingAfter) throws DocumentException {
-        Paragraph p = new Paragraph(text, font);
+        Paragraph p = new Paragraph();
         p.setAlignment(alignment);
         p.setSpacingAfter(spacingAfter);
+
+        Font boldFont = FontFactory.getFont(font.getFamilyname(), font.getSize(), Font.BOLD, font.getColor());
+
+        String[] parts = text.split("\\*\\*", -1);
+        for (int i = 0; i < parts.length; i++) {
+            if (parts[i].isEmpty()) continue;
+            p.add(new Chunk(parts[i], i % 2 == 0 ? font : boldFont));
+        }
         document.add(p);
     }
 

@@ -8,6 +8,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import uan.edu.co.crazy_bakery.application.dto.responses.ReporteGeneradoDTO;
 import uan.edu.co.crazy_bakery.application.services.ReportService;
 
 import java.io.IOException;
@@ -31,31 +32,37 @@ class ReportControllerTest {
     }
 
     @Test
-    void testGenerateIngredientAnalysisReport_retorna200ConUrl() throws IOException, DocumentException {
+    void testGenerateIngredientAnalysisReport_retorna200ConDto() throws IOException, DocumentException {
         // Arrange
         when(reportService.generateIngredientAnalysisReport()).thenReturn(STORAGE_URL);
 
         // Act
-        ResponseEntity<String> response = reportController.generateIngredientAnalysisReport();
+        ResponseEntity<ReporteGeneradoDTO> response = reportController.generateIngredientAnalysisReport();
 
         // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(STORAGE_URL, response.getBody());
+        assertNotNull(response.getBody());
+        assertEquals("Análisis de Ingredientes", response.getBody().getNombre_reporte());
+        assertNotNull(response.getBody().getFecha_reporte());
+        assertEquals(STORAGE_URL, response.getBody().getUrl());
     }
 
     @Test
-    void testGenerateIngredientStrategyReport_retorna200ConUrl() throws IOException, DocumentException {
+    void testGenerateIngredientStrategyReport_retorna200ConDto() throws IOException, DocumentException {
         // Arrange
         when(reportService.generateIngredientStrategyReport()).thenReturn(STORAGE_URL);
 
         // Act
-        ResponseEntity<String> response = reportController.generateIngredientStrategyReport();
+        ResponseEntity<ReporteGeneradoDTO> response = reportController.generateIngredientStrategyReport();
 
         // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(STORAGE_URL, response.getBody());
+        assertNotNull(response.getBody());
+        assertEquals("Estrategia de Ingredientes", response.getBody().getNombre_reporte());
+        assertNotNull(response.getBody().getFecha_reporte());
+        assertEquals(STORAGE_URL, response.getBody().getUrl());
     }
 
     @Test
