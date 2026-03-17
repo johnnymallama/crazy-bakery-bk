@@ -6,18 +6,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.jdbc.core.JdbcTemplate;
+import uan.edu.co.crazy_bakery.application.services.storage.StorageService;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,15 +33,20 @@ class ReportServiceImplTest {
     @Mock
     private JdbcTemplate jdbcTemplate;
 
-    @InjectMocks
+    @Mock
+    private StorageService storageService;
+
     private ReportServiceImpl reportService;
 
+    private static final String STORAGE_URL = "https://firebasestorage.googleapis.com/v0/b/bucket/o/reportes%2Freporte.pdf?alt=media";
+
     @BeforeEach
-    void setUp() {
+    void setUp() throws IOException {
         // Use RETURNS_DEEP_STUBS to handle the fluent API chain
         chatClient = Mockito.mock(ChatClient.class, Mockito.RETURNS_DEEP_STUBS);
         when(chatClientBuilder.build()).thenReturn(chatClient);
-        reportService = new ReportServiceImpl(chatClientBuilder, jdbcTemplate, new ObjectMapper());
+        Mockito.lenient().when(storageService.uploadBytes(any(byte[].class), anyString(), anyString())).thenReturn(STORAGE_URL);
+        reportService = new ReportServiceImpl(chatClientBuilder, jdbcTemplate, new ObjectMapper(), storageService);
     }
 
     private void mockDatabase() {
@@ -104,11 +106,12 @@ class ReportServiceImplTest {
         mockAiResponse(getValidAnalysisMarkdown());
 
         // Act
-        byte[] pdf = reportService.generateIngredientAnalysisReport();
+        String url = reportService.generateIngredientAnalysisReport();
 
         // Assert
-        assertNotNull(pdf);
-        assertTrue(pdf.length > 0);
+        assertNotNull(url);
+        assertFalse(url.isEmpty());
+        assertEquals(STORAGE_URL, url);
     }
 
     @Test
@@ -119,11 +122,12 @@ class ReportServiceImplTest {
         mockAiResponse(getValidStrategyMarkdown());
 
         // Act
-        byte[] pdf = reportService.generateIngredientStrategyReport();
+        String url = reportService.generateIngredientStrategyReport();
 
         // Assert
-        assertNotNull(pdf);
-        assertTrue(pdf.length > 0);
+        assertNotNull(url);
+        assertFalse(url.isEmpty());
+        assertEquals(STORAGE_URL, url);
     }
 
     @Test
@@ -135,12 +139,11 @@ class ReportServiceImplTest {
         mockAiResponse(partialContent);
 
         // Act
-        byte[] pdf = reportService.generateIngredientAnalysisReport();
+        String url = reportService.generateIngredientAnalysisReport();
 
         // Assert
-        // Should still generate a PDF, even if it's not the complete report
-        assertNotNull(pdf);
-        assertTrue(pdf.length > 0);
+        assertNotNull(url);
+        assertFalse(url.isEmpty());
     }
 
 

@@ -12,15 +12,20 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.chart.labels.StandardPieSectionLabelGenerator;
 import org.jfree.chart.plot.PiePlot;
 import org.jfree.data.general.DefaultPieDataset;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import uan.edu.co.crazy_bakery.application.services.ReportService;
+import uan.edu.co.crazy_bakery.application.services.storage.StorageService;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -33,9 +38,14 @@ import java.util.stream.Stream;
 @Service
 public class ReportServiceImpl implements ReportService {
 
+    private static final Logger log = LoggerFactory.getLogger(ReportServiceImpl.class);
+
     private final ChatClient chatClient;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+    private final StorageService storageService;
+
+    private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     private static final Font TITLE_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, BaseColor.BLACK);
     private static final Font SUBTITLE_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, new BaseColor(0, 51, 102));
@@ -43,14 +53,15 @@ public class ReportServiceImpl implements ReportService {
     private static final Font NORMAL_FONT = FontFactory.getFont(FontFactory.HELVETICA, 10);
     private static final Font TABLE_HEADER_FONT = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, BaseColor.WHITE);
 
-    public ReportServiceImpl(ChatClient.Builder chatClientBuilder, JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public ReportServiceImpl(ChatClient.Builder chatClientBuilder, JdbcTemplate jdbcTemplate, ObjectMapper objectMapper, StorageService storageService) {
         this.chatClient = chatClientBuilder.build();
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.storageService = storageService;
     }
 
     @Override
-    public byte[] generateIngredientAnalysisReport() throws IOException, DocumentException {
+    public String generateIngredientAnalysisReport() throws IOException, DocumentException {
         Map<String, Object> data = fetchDataForLast50Days();
         String jsonData = objectMapper.writeValueAsString(data);
         String prompt = buildPrompt(jsonData);
@@ -59,16 +70,38 @@ public class ReportServiceImpl implements ReportService {
         if (analysis == null || analysis.trim().isEmpty()) {
             throw new DocumentException("La respuesta de la IA está vacía. No se puede generar el reporte.");
         }
-        
+
+        log.info("=== RESPUESTA IA (analysis) ===\n{}", analysis);
+
+        // Inyectar TOP_DEMAND_JSON con datos reales de BD (reemplaza o agrega el bloque)
+        @SuppressWarnings("unchecked")
+        Map<String, Object> costoTop = (Map<String, Object>) data.get("costoTopCombinacion");
+        if (costoTop != null) {
+            String topJson = String.format(
+                "\n<!-- TOP_DEMAND_JSON\n{\"bizcocho\": \"%s\", \"costo_bizcocho\": %s, \"relleno\": \"%s\", \"costo_relleno\": %s, \"cobertura\": \"%s\", \"costo_cobertura\": %s}\n-->",
+                costoTop.get("bizcocho"), costoTop.get("costo_bizcocho"),
+                costoTop.get("relleno"), costoTop.get("costo_relleno"),
+                costoTop.get("cobertura"), costoTop.get("costo_cobertura")
+            );
+            // Reemplazar si la IA lo incluyó, o agregar al final
+            if (analysis.contains("<!-- TOP_DEMAND_JSON")) {
+                analysis = analysis.replaceAll("<!--\\s*TOP_DEMAND_JSON[\\s\\S]*?-->", topJson.trim());
+            } else {
+                analysis = analysis + topJson;
+            }
+        }
+
         Map<String, Object> pdfData = new HashMap<>();
         pdfData.put("topCombinations", data.get("combinacionesVendidas"));
         pdfData.put("reportType", "analysis");
 
-        return generatePdf(analysis, pdfData);
+        byte[] pdf = generatePdf(analysis, pdfData);
+        String fileName = "reportes/analisis_ingredientes_" + LocalDateTime.now().format(TIMESTAMP_FORMATTER) + ".pdf";
+        return storageService.uploadBytes(pdf, fileName, "application/pdf");
     }
 
     @Override
-    public byte[] generateIngredientStrategyReport() throws IOException, DocumentException {
+    public String generateIngredientStrategyReport() throws IOException, DocumentException {
         Map<String, Object> data = fetchDataForLast50Days();
         String jsonData = objectMapper.writeValueAsString(data);
         String prompt = buildStrategicIngredientAnalysisPrompt(jsonData);
@@ -77,10 +110,12 @@ public class ReportServiceImpl implements ReportService {
         if (analysis == null || analysis.trim().isEmpty()) {
             throw new DocumentException("La respuesta de la IA está vacía. No se puede generar el reporte.");
         }
-        
-data.put("reportType", "strategy");
 
-        return generatePdf(analysis, data);
+        data.put("reportType", "strategy");
+
+        byte[] pdf = generatePdf(analysis, data);
+        String fileName = "reportes/estrategia_ingredientes_" + LocalDateTime.now().format(TIMESTAMP_FORMATTER) + ".pdf";
+        return storageService.uploadBytes(pdf, fileName, "application/pdf");
     }
 
     private String buildStrategicIngredientAnalysisPrompt(String jsonData) {
@@ -124,6 +159,17 @@ data.put("reportType", "strategy");
             + "WHERE o.fecha >= DATE_SUB(CURDATE(), INTERVAL 50 DAY) GROUP BY b.nombre, r.nombre, c.nombre "
             + "ORDER BY cantidad_pedidos DESC LIMIT 5;";
 
+        String topCombinationCostSql = "SELECT b.nombre AS bizcocho, b.costo_por_gramo AS costo_bizcocho, "
+            + "r.nombre AS relleno, r.costo_por_gramo AS costo_relleno, "
+            + "c.nombre AS cobertura, c.costo_por_gramo AS costo_cobertura "
+            + "FROM `orden` o INNER JOIN torta t ON o.id = t.id "
+            + "INNER JOIN ingrediente b ON b.id = t.bizcocho_id "
+            + "INNER JOIN ingrediente r ON r.id = t.relleno_id "
+            + "INNER JOIN ingrediente c ON c.id = t.cubertura_id "
+            + "WHERE o.fecha >= DATE_SUB(CURDATE(), INTERVAL 50 DAY) "
+            + "GROUP BY b.nombre, b.costo_por_gramo, r.nombre, r.costo_por_gramo, c.nombre, c.costo_por_gramo "
+            + "ORDER BY COUNT(*) DESC LIMIT 1;";
+
         String totalOrdersSql = "SELECT COUNT(*) FROM orden WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 50 DAY)";
         String newIngredientsSql = "SELECT nombre, costo_por_gramo FROM ingrediente WHERE tipo_ingrediente NOT IN ('BIZCOCHO', 'RELLENO', 'COBERTURA') AND estado = TRUE;";
         
@@ -145,6 +191,7 @@ data.put("reportType", "strategy");
         List<Map<String, Object>> rellenoFrequency = jdbcTemplate.queryForList(rellenoFrequencySql);
         List<Map<String, Object>> coberturaFrequency = jdbcTemplate.queryForList(coberturaFrequencySql);
         List<Map<String, Object>> lowUsageIngredients = jdbcTemplate.queryForList(lowUsageIngredientsSql);
+        List<Map<String, Object>> topCombinationCost = jdbcTemplate.queryForList(topCombinationCostSql);
 
         Map<String, Object> data = new HashMap<>();
         data.put("combinacionesVendidas", topCombinations);
@@ -154,6 +201,7 @@ data.put("reportType", "strategy");
         data.put("frecuenciaRellenos", rellenoFrequency);
         data.put("frecuenciaCoberturas", coberturaFrequency);
         data.put("ingredientesPocoUtilizados", lowUsageIngredients);
+        data.put("costoTopCombinacion", topCombinationCost.isEmpty() ? null : topCombinationCost.get(0));
 
         return data;
     }
@@ -170,27 +218,27 @@ data.put("reportType", "strategy");
             + "## 3. Top Demanda\n"
             + "Construye una tabla Markdown con las 5 combinaciones más vendidas. La tabla debe incluir:\n| Combinación | Número de pedidos | Porcentaje de demanda |\n\n"
             + "## 4. Gráfico de Demanda\n"
-            + "(El sistema generará el gráfico de barras en esta sección. No es necesario que escribas nada aquí).\n\n\n"
+            + "ESCRIBE EXACTAMENTE esta línea y nada más en esta sección: (El sistema generará el gráfico de barras en esta sección).\n\n"
             + "## 5. Propuesta de Tendencias\n"
             + "Analiza los ingredientes más recurrentes del Top Demanda y propone una nueva combinación de postre que podría tener alta aceptación. Explica la propuesta en formato speech o párrafo estratégico, justificando:\n- por qué los ingredientes elegidos son coherentes con las preferencias del cliente\n- cómo esta combinación aporta variedad al menú.\n\n"
             + "## 6. Análisis de Costos\n"
             + "Construye una tabla Markdown comparando la combinación Top Demanda y la nueva combinación propuesta. La tabla debe incluir:\n| Tipo de combinación | Bizcocho | Relleno | Cobertura | Costo estimado por gramo (COP) | Costo por porción (150g) |\nUtiliza valores de costos estimados razonables.\n\n"
             + "## 7. Visualización de Composición\n\n"
-            + "### Gráfico 1: Composición y Costo del Postre Top Demanda\n"
-            + "(El sistema generará aquí el gráfico de torta. DEBES seguir proveyendo el bloque JSON 'TOP_DEMAND_JSON' con los datos de costo requeridos).\n\n"
-            + "### Gráfico 2: Composición y Costo del Postre Propuesto\n"
-            + "(El sistema generará aquí el gráfico de torta. DEBES seguir proveyendo el bloque JSON 'PROPUESTA_JSON' con los datos de costo requeridos).\n\n"
+            + "### Gráfico 1: Top Demanda\n"
+            + "ESCRIBE EXACTAMENTE esta línea y nada más en esta sección: (El sistema generará el gráfico de torta aquí).\n\n"
+            + "### Gráfico 2: Propuesta\n"
+            + "ESCRIBE EXACTAMENTE esta línea y nada más en esta sección: (El sistema generará el gráfico de torta aquí).\n\n"
             + "## 8. Conclusión Estratégica\n"
             + "Redacta una conclusión breve que explique:\n- qué aprendimos sobre el comportamiento del cliente\n- qué oportunidad de producto existe\n- cómo este análisis puede ayudar a mejorar las decisiones operativas del negocio.\n\n"
             + "--- Reglas generales ---\n"
             + "- Responder en formato Markdown.\n"
             + "- Incluir tablas claras.\n"
-            + "- Incluir los gráficos solicitados.\n"
+            + "- OBLIGATORIO: incluir TODAS las secciones numeradas del 1 al 8 con sus encabezados exactos.\n"
             + "- El análisis debe ser interpretativo y estratégico, no solo descriptivo.\n\n"
-            + "--- INSTRUCCIONES CRÍTICAS PARA GRÁFICOS ---\n"
-            + "Para que el sistema genere los gráficos de torta, DEBES proporcionar los datos en bloques JSON ocultos separados. Asegúrate de que los nombres de ingredientes y costos sean consistentes con tu análisis en la tabla anterior.\n"
-            + "<!-- TOP_DEMAND_JSON\n{\n  \"bizcocho\": \"(nombre bizcocho top)\", \"costo_bizcocho\": (valor),\n  \"relleno\": \"(nombre relleno top)\", \"costo_relleno\": (valor),\n  \"cobertura\": \"(nombre cobertura top)\", \"costo_cobertura\": (valor)\n}\n-->\n\n"
-            + "<!-- PROPUESTA_JSON\n{\n  \"bizcocho\": \"(nombre bizcocho propuesto)\", \"costo_bizcocho\": (valor),\n  \"relleno\": \"(nombre relleno propuesto)\", \"costo_relleno\": (valor),\n  \"cobertura\": \"(nombre cobertura propuesto)\", \"costo_cobertura\": (valor)\n}\n-->";
+            + "--- INSTRUCCIONES CRÍTICAS PARA GRÁFICO DE PROPUESTA ---\n"
+            + "OBLIGATORIO: Al final de tu respuesta DEBES incluir exactamente este bloque de comentario HTML con los costos reales de la combinación que propusiste en la sección 5. NO uses placeholders, NO dejes valores en cero, NO omitas este bloque. Los costos deben ser los mismos valores numéricos que escribiste en la sección 6, expresados como números enteros en COP por gramo.\n\n"
+            + "Formato EXACTO requerido (reemplaza SOLO los valores con los de tu propuesta):\n\n"
+            + "<!-- PROPUESTA_JSON\n{\"bizcocho\": \"NombreBizchoPropuesto\", \"costo_bizcocho\": 130, \"relleno\": \"NombreRellenoPropuesto\", \"costo_relleno\": 90, \"cobertura\": \"NombreCoberturaPropuesta\", \"costo_cobertura\": 70}\n-->";
     }
 
     private byte[] generatePdf(String markdownText, Map<String, Object> data) throws DocumentException, IOException {
@@ -210,6 +258,9 @@ data.put("reportType", "strategy");
         PdfPTable table = null;
         boolean inTable = false;
         boolean skippingJsonBlock = false;
+        boolean barChartRendered = false;
+        boolean pieChart1Rendered = false;
+        boolean pieChart2Rendered = false;
 
         for (String line : lines) {
             String trimmedLine = line.trim();
@@ -225,21 +276,25 @@ data.put("reportType", "strategy");
                 continue;
             }
 
-            if (reportType.equals("analysis") && trimmedLine.contains("## 4. Gráfico de Demanda")) {
+            String lowerLine = trimmedLine.toLowerCase();
+            if (reportType.equals("analysis") && trimmedLine.startsWith("##") && lowerLine.contains("4.") && lowerLine.contains("gr")) {
                 flushTable(document, table); inTable = false; table = null;
                 addParagraph(document, "4. Gráfico de Demanda", SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
                 addBarChart(document, (List<Map<String, Object>>) data.get("topCombinations"));
-                document.add(new Paragraph(" ")); // Salto de seguridad
+                document.add(new Paragraph(" "));
+                barChartRendered = true;
                 continue;
-            } else if (reportType.equals("analysis") && trimmedLine.contains("### Gráfico 1")) {
+            } else if (reportType.equals("analysis") && trimmedLine.startsWith("###") && lowerLine.contains("gr") && lowerLine.contains("top")) {
                 flushTable(document, table); inTable = false; table = null;
                 createAndAddPieChart(document, markdownText, "TOP_DEMAND_JSON", "Gráfico 1: Composición y Costo del Postre Top Demanda");
-                document.add(new Paragraph(" ")); // Salto de seguridad
+                document.add(new Paragraph(" "));
+                pieChart1Rendered = true;
                 continue;
-            } else if (reportType.equals("analysis") && trimmedLine.contains("### Gráfico 2")) {
+            } else if (reportType.equals("analysis") && trimmedLine.startsWith("###") && lowerLine.contains("gr") && lowerLine.contains("propuest")) {
                 flushTable(document, table); inTable = false; table = null;
                 createAndAddPieChart(document, markdownText, "PROPUESTA_JSON", "Gráfico 2: Composición y Costo del Postre Propuesto");
-                document.add(new Paragraph(" ")); // Salto de seguridad
+                document.add(new Paragraph(" "));
+                pieChart2Rendered = true;
                 continue;
             } else if (reportType.equals("strategy") && trimmedLine.contains("## 2. Ingredientes Más Utilizados")) {
                 flushTable(document, table); inTable = false; table = null;
@@ -271,8 +326,27 @@ data.put("reportType", "strategy");
                 addParagraph(document, trimmedLine.substring(2), TITLE_FONT, Element.ALIGN_CENTER, 20f);
             } else if (trimmedLine.startsWith("## ")) {
                 flushTable(document, table); inTable = false; table = null;
-                if (trimmedLine.startsWith("## 8.") || trimmedLine.startsWith("## 5.")) { // Check if it's section 8 or 5
-                    document.add(new Paragraph(" ")); // Add the extra break
+                // Antes de la sección 8, insertar gráficas pendientes en orden correcto
+                if (reportType.equals("analysis") && trimmedLine.startsWith("## 8.")) {
+                    if (!barChartRendered) {
+                        addParagraph(document, "4. Gráfico de Demanda", SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
+                        addBarChart(document, (List<Map<String, Object>>) data.get("topCombinations"));
+                        document.add(new Paragraph(" "));
+                        barChartRendered = true;
+                    }
+                    if (!pieChart1Rendered) {
+                        createAndAddPieChart(document, markdownText, "TOP_DEMAND_JSON", "Gráfico 1: Composición y Costo del Postre Top Demanda");
+                        document.add(new Paragraph(" "));
+                        pieChart1Rendered = true;
+                    }
+                    if (!pieChart2Rendered) {
+                        createAndAddPieChart(document, markdownText, "PROPUESTA_JSON", "Gráfico 2: Composición y Costo del Postre Propuesto");
+                        document.add(new Paragraph(" "));
+                        pieChart2Rendered = true;
+                    }
+                    document.add(new Paragraph(" "));
+                } else if (trimmedLine.startsWith("## 5.")) {
+                    document.add(new Paragraph(" "));
                 }
                 addParagraph(document, trimmedLine.substring(3), SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
             } else if (trimmedLine.startsWith("### ")) {
@@ -309,10 +383,11 @@ data.put("reportType", "strategy");
             addParagraph(document, chartTitle, SUB_SUBTITLE_FONT, Element.ALIGN_LEFT, 15f);
         }
 
-        Pattern pattern = Pattern.compile("<!-- " + jsonBlockId + "(.*?)-->", Pattern.DOTALL);
+        Pattern pattern = Pattern.compile("<!--\\s*" + jsonBlockId + "\\s*(.*?)-->", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(aiResponse);
 
         if (!matcher.find()) {
+            log.warn("No se encontró el bloque JSON '{}' en la respuesta de la IA. Respuesta recibida:\n{}", jsonBlockId, aiResponse);
             document.add(new Paragraph("[Error: No se encontró el bloque de datos JSON '" + jsonBlockId + "' para generar el gráfico.]", NORMAL_FONT));
             return;
         }

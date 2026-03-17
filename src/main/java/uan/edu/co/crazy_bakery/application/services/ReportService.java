@@ -4,6 +4,6 @@ import com.itextpdf.text.DocumentException;
 import java.io.IOException;
 
 public interface ReportService {
-    byte[] generateIngredientAnalysisReport() throws IOException, DocumentException;
-    byte[] generateIngredientStrategyReport() throws IOException, DocumentException;
+    String generateIngredientAnalysisReport() throws IOException, DocumentException;
+    String generateIngredientStrategyReport() throws IOException, DocumentException;
 }
