@@ -56,7 +56,11 @@ public class OrdenServiceImpl implements OrdenService {
     @Override
     @Transactional(readOnly = true)
     public List<OrdenDTO> getAllOrdenes() {
-        return ordenRepository.findAll().stream()
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.MONTH, -historyMonthCount);
+        Date fechaInicio = cal.getTime();
+
+        return ordenRepository.findByFechaAfterOrderByFechaDesc(fechaInicio).stream()
                 .map(ordenMapper::toDto)
                 .collect(Collectors.toList());
     }

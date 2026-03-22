@@ -281,7 +281,7 @@ class OrdenServiceImplTest {
         Orden orden = createOrden(1L, EstadoOrden.CREADO, usuario);
         OrdenDTO ordenDTO = createOrdenDTO(1L, EstadoOrden.CREADO, usuarioDTO);
 
-        when(ordenRepository.findAll()).thenReturn(List.of(orden));
+        when(ordenRepository.findByFechaAfterOrderByFechaDesc(any(Date.class))).thenReturn(List.of(orden));
         when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
 
         // Act
@@ -292,6 +292,7 @@ class OrdenServiceImplTest {
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
         assertEquals(EstadoOrden.CREADO, result.get(0).getEstado());
+        verify(ordenRepository, times(1)).findByFechaAfterOrderByFechaDesc(any(Date.class));
     }
 
     @Test

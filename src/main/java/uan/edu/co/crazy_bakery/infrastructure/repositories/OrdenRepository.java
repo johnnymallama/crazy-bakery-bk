@@ -19,5 +19,6 @@ public interface OrdenRepository extends JpaRepository<Orden, Long> {
 
     List<Orden> findByUsuarioIdAndFechaAfterOrderByFechaDesc(String usuarioId, Date fecha);
 
+    List<Orden> findByFechaAfterOrderByFechaDesc(Date fecha);
 
 }
