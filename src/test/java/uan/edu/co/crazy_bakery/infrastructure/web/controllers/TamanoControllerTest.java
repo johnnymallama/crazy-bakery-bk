@@ -1,33 +1,47 @@
 package uan.edu.co.crazy_bakery.infrastructure.web.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import uan.edu.co.crazy_bakery.application.dto.requests.ActualizarTamanoDTO;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearTamanoDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.TamanoDTO;
 import uan.edu.co.crazy_bakery.application.services.TamanoService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoReceta;
+import uan.edu.co.crazy_bakery.infrastructure.web.security.FirebaseTokenFilter;
 
 import java.util.Collections;
-import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(
+        controllers = TamanoController.class,
+        excludeAutoConfiguration = {SecurityAutoConfiguration.class},
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = FirebaseTokenFilter.class)
+)
 class TamanoControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private TamanoService tamanoService;
 
-    @InjectMocks
-    private TamanoController tamanoController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private TamanoDTO tamanoDTO;
     private CrearTamanoDTO crearTamanoDTO;
@@ -35,8 +49,6 @@ class TamanoControllerTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-
         tamanoDTO = new TamanoDTO();
         tamanoDTO.setId(1L);
         tamanoDTO.setNombre("Personal");
@@ -46,68 +58,65 @@ class TamanoControllerTest {
     }
 
     @Test
-    void testCrearTamano() {
+    void crearTamano_Success() throws Exception {
         when(tamanoService.crearTamano(any(CrearTamanoDTO.class))).thenReturn(tamanoDTO);
 
-        ResponseEntity<TamanoDTO> response = tamanoController.crearTamano(crearTamanoDTO);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(tamanoDTO, response.getBody());
+        mockMvc.perform(post("/tamanos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(crearTamanoDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.nombre").value("Personal"));
     }
 
     @Test
-    void testObtenerTamanoPorId() {
+    void obtenerTamanoPorId_Success() throws Exception {
         when(tamanoService.obtenerTamanoPorId(1L)).thenReturn(tamanoDTO);
 
-        ResponseEntity<TamanoDTO> response = tamanoController.obtenerTamanoPorId(1L);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(tamanoDTO, response.getBody());
+        mockMvc.perform(get("/tamanos/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.nombre").value("Personal"));
     }
 
     @Test
-    void testObtenerTodosLosTamanos() {
+    void obtenerTodosLosTamanos_Success() throws Exception {
         when(tamanoService.obtenerTodosLosTamanos()).thenReturn(Collections.singletonList(tamanoDTO));
 
-        ResponseEntity<List<TamanoDTO>> response = tamanoController.obtenerTodosLosTamanos();
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(1, response.getBody().size());
+        mockMvc.perform(get("/tamanos"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].nombre").value("Personal"));
     }
 
     @Test
-    void testActualizarTamano() {
+    void actualizarTamano_Success() throws Exception {
         when(tamanoService.actualizarTamano(eq(1L), any(ActualizarTamanoDTO.class))).thenReturn(tamanoDTO);
 
-        ResponseEntity<TamanoDTO> response = tamanoController.actualizarTamano(1L, actualizarTamanoDTO);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(tamanoDTO, response.getBody());
+        mockMvc.perform(put("/tamanos/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(actualizarTamanoDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L));
     }
 
     @Test
-    void testEliminarTamano() {
+    void eliminarTamano_Success() throws Exception {
         doNothing().when(tamanoService).eliminarTamano(1L);
 
-        ResponseEntity<Void> response = tamanoController.eliminarTamano(1L);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(tamanoService, times(1)).eliminarTamano(1L);
+        mockMvc.perform(delete("/tamanos/1"))
+                .andExpect(status().isNoContent());
     }
 
     @Test
-    void testObtenerTamanosPorTipoReceta() {
+    void obtenerTamanosPorTipoReceta_Success() throws Exception {
         when(tamanoService.obtenerTamanosPorTipoReceta(TipoReceta.TORTA)).thenReturn(Collections.singletonList(tamanoDTO));
 
-        ResponseEntity<List<TamanoDTO>> response = tamanoController.obtenerTamanosPorTipoReceta(TipoReceta.TORTA);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(1, response.getBody().size());
+        mockMvc.perform(get("/tamanos/tipo-receta/TORTA"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").value(1L));
     }
 }

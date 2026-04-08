@@ -1,12 +1,16 @@
 package uan.edu.co.crazy_bakery.infrastructure.web.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import uan.edu.co.crazy_bakery.application.dto.requests.AgregarNotaOrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.requests.AgregarRecetaOrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.requests.CambiarEstadoOrdenDTO;
@@ -15,182 +19,152 @@ import uan.edu.co.crazy_bakery.application.dto.responses.OrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.UsuarioDTO;
 import uan.edu.co.crazy_bakery.application.services.OrdenService;
 import uan.edu.co.crazy_bakery.domain.enums.EstadoOrden;
+import uan.edu.co.crazy_bakery.infrastructure.web.security.FirebaseTokenFilter;
 
 import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(
+        controllers = OrdenController.class,
+        excludeAutoConfiguration = {SecurityAutoConfiguration.class},
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = FirebaseTokenFilter.class)
+)
 class OrdenControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private OrdenService ordenService;
 
-    @InjectMocks
-    private OrdenController ordenController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-    private UsuarioDTO usuarioDTO;
+    private OrdenDTO ordenDTO;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        usuarioDTO = new UsuarioDTO();
+        UsuarioDTO usuarioDTO = new UsuarioDTO();
         usuarioDTO.setId("user123");
         usuarioDTO.setNombre("Test User");
-    }
 
-    private OrdenDTO createOrdenDTO(Long id, UsuarioDTO usuario) {
-        return OrdenDTO.builder()
-                .id(id)
-                .usuario(usuario)
+        ordenDTO = OrdenDTO.builder()
+                .id(1L)
+                .usuario(usuarioDTO)
                 .build();
     }
 
     @Test
-    void testCreateOrden() {
+    void createOrden_Success() throws Exception {
         CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO();
-        OrdenDTO ordenDTO = createOrdenDTO(1L, usuarioDTO);
-
         when(ordenService.createOrden(any(CrearOrdenDTO.class))).thenReturn(ordenDTO);
 
-        ResponseEntity<OrdenDTO> response = ordenController.createOrden(crearOrdenDTO);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().getUsuario());
-        assertEquals("user123", response.getBody().getUsuario().getId());
+        mockMvc.perform(post("/orden")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(crearOrdenDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.usuario.id").value("user123"));
     }
 
     @Test
-    void testGetAllOrdenes() {
-        List<OrdenDTO> ordenes = Collections.singletonList(createOrdenDTO(1L, usuarioDTO));
-        when(ordenService.getAllOrdenes()).thenReturn(ordenes);
+    void getAllOrdenes_Success() throws Exception {
+        when(ordenService.getAllOrdenes()).thenReturn(Collections.singletonList(ordenDTO));
 
-        ResponseEntity<List<OrdenDTO>> response = ordenController.getAllOrdenes();
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertFalse(response.getBody().isEmpty());
-        assertNotNull(response.getBody().get(0).getUsuario());
-        assertEquals("user123", response.getBody().get(0).getUsuario().getId());
+        mockMvc.perform(get("/orden"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").value(1L))
+                .andExpect(jsonPath("$[0].usuario.id").value("user123"));
     }
 
     @Test
-    void testGetOrdenById() {
-        Long id = 1L;
-        OrdenDTO ordenDTO = createOrdenDTO(id, usuarioDTO);
-        when(ordenService.getOrdenById(id)).thenReturn(ordenDTO);
+    void getOrdenById_Success() throws Exception {
+        when(ordenService.getOrdenById(1L)).thenReturn(ordenDTO);
 
-        ResponseEntity<OrdenDTO> response = ordenController.getOrdenById(id);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(id, response.getBody().getId());
-        assertNotNull(response.getBody().getUsuario());
-        assertEquals("user123", response.getBody().getUsuario().getId());
-        assertEquals("Test User", response.getBody().getUsuario().getNombre());
+        mockMvc.perform(get("/orden/1"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(1L));
     }
 
     @Test
-    void testGetOrdenesByUsuario() {
-        String usuarioId = "user123";
-        List<OrdenDTO> ordenes = Collections.singletonList(createOrdenDTO(1L, usuarioDTO));
-        when(ordenService.getOrdenesByUsuario(usuarioId)).thenReturn(ordenes);
+    void getOrdenesByUsuario_Success() throws Exception {
+        when(ordenService.getOrdenesByUsuario("user123")).thenReturn(Collections.singletonList(ordenDTO));
 
-        ResponseEntity<List<OrdenDTO>> response = ordenController.getOrdenesByUsuario(usuarioId);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(usuarioId, Objects.requireNonNull(response.getBody()).get(0).getUsuario().getId());
+        mockMvc.perform(get("/orden/usuario/user123"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].usuario.id").value("user123"));
     }
 
     @Test
-    void testGetOrdenesByEstado() {
-        EstadoOrden estado = EstadoOrden.CREADO;
-        List<OrdenDTO> ordenes = Collections.singletonList(createOrdenDTO(1L, usuarioDTO));
-        when(ordenService.getOrdenesByEstado(estado)).thenReturn(ordenes);
+    void getOrdenesByEstado_Success() throws Exception {
+        when(ordenService.getOrdenesByEstado(EstadoOrden.CREADO)).thenReturn(Collections.singletonList(ordenDTO));
 
-        ResponseEntity<List<OrdenDTO>> response = ordenController.getOrdenesByEstado(estado);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().get(0).getUsuario());
+        mockMvc.perform(get("/orden/estado/CREADO"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").value(1L));
     }
 
     @Test
-    void testGetOrdenesByFecha() {
-        Date fechaInicio = new Date();
-        Date fechaFin = new Date();
-        List<OrdenDTO> ordenes = Collections.singletonList(createOrdenDTO(1L, usuarioDTO));
-        when(ordenService.getOrdenesByFecha(fechaInicio, fechaFin)).thenReturn(ordenes);
+    void getOrdenesByFecha_Success() throws Exception {
+        when(ordenService.getOrdenesByFecha(any(), any())).thenReturn(Collections.singletonList(ordenDTO));
 
-        ResponseEntity<List<OrdenDTO>> response = ordenController.getOrdenesByFecha(fechaInicio, fechaFin);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().get(0).getUsuario());
+        mockMvc.perform(get("/orden/fecha")
+                        .param("fechaInicio", "2024-01-01")
+                        .param("fechaFin", "2024-12-31"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").value(1L));
     }
 
     @Test
-    void testCambiarEstadoOrden() {
-        Long ordenId = 1L;
+    void cambiarEstadoOrden_Success() throws Exception {
         CambiarEstadoOrdenDTO cambiarEstadoOrdenDTO = new CambiarEstadoOrdenDTO();
         cambiarEstadoOrdenDTO.setEstado(EstadoOrden.CONFIRMADO);
-        OrdenDTO ordenDTO = createOrdenDTO(ordenId, usuarioDTO);
 
-        when(ordenService.cambiarEstadoOrden(eq(ordenId), any(EstadoOrden.class))).thenReturn(ordenDTO);
+        when(ordenService.cambiarEstadoOrden(eq(1L), any(EstadoOrden.class))).thenReturn(ordenDTO);
 
-        ResponseEntity<OrdenDTO> response = ordenController.cambiarEstadoOrden(ordenId, cambiarEstadoOrdenDTO);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().getUsuario());
+        mockMvc.perform(patch("/orden/1/estado")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(cambiarEstadoOrdenDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L));
     }
 
     @Test
-    void testAgregarNotaOrden() {
-        Long ordenId = 1L;
+    void agregarNotaOrden_Success() throws Exception {
         AgregarNotaOrdenDTO agregarNotaOrdenDTO = new AgregarNotaOrdenDTO();
-        agregarNotaOrdenDTO.setNota("Test nota");
-        OrdenDTO ordenDTO = createOrdenDTO(ordenId, usuarioDTO);
+        agregarNotaOrdenDTO.setNota("Sin gluten");
+        agregarNotaOrdenDTO.setUsuarioId("user123");
 
-        // Corrección: usar any(AgregarNotaOrdenDTO.class) en lugar de any(String.class)
-        when(ordenService.agregarNotaOrden(eq(ordenId), any(AgregarNotaOrdenDTO.class))).thenReturn(ordenDTO);
+        when(ordenService.agregarNotaOrden(eq(1L), any(AgregarNotaOrdenDTO.class))).thenReturn(ordenDTO);
 
-        ResponseEntity<OrdenDTO> response = ordenController.agregarNotaOrden(ordenId, agregarNotaOrdenDTO);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().getUsuario());
+        mockMvc.perform(patch("/orden/1/nota")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(agregarNotaOrdenDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L));
     }
 
     @Test
-    void testAgregarRecetaOrden() {
-        Long ordenId = 1L;
+    void agregarRecetaOrden_Success() throws Exception {
         AgregarRecetaOrdenDTO agregarRecetaOrdenDTO = new AgregarRecetaOrdenDTO();
-        agregarRecetaOrdenDTO.setRecetaId(1L);
-        OrdenDTO ordenDTO = createOrdenDTO(ordenId, usuarioDTO);
+        agregarRecetaOrdenDTO.setRecetaId(2L);
 
-        when(ordenService.agregarRecetaOrden(eq(ordenId), any(Long.class))).thenReturn(ordenDTO);
+        when(ordenService.agregarRecetaOrden(eq(1L), eq(2L))).thenReturn(ordenDTO);
 
-        ResponseEntity<OrdenDTO> response = ordenController.agregarRecetaOrden(ordenId, agregarRecetaOrdenDTO);
-
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertNotNull(response.getBody().getUsuario());
+        mockMvc.perform(patch("/orden/1/receta")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(agregarRecetaOrdenDTO)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1L));
     }
 }

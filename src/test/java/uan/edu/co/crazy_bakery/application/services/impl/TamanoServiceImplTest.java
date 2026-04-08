@@ -2,9 +2,10 @@ package uan.edu.co.crazy_bakery.application.services.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import uan.edu.co.crazy_bakery.application.dto.requests.ActualizarTamanoDTO;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearTamanoDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.TamanoDTO;
@@ -17,10 +18,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class TamanoServiceImplTest {
 
     @Mock
@@ -39,10 +43,7 @@ class TamanoServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-
         crearTamanoDTO = new CrearTamanoDTO("Personal", 10, 15, 8, TipoReceta.TORTA, 1.5F);
-
         actualizarTamanoDTO = new ActualizarTamanoDTO(12, 18, 10, 1.5F);
 
         tamano = new Tamano();
@@ -56,94 +57,93 @@ class TamanoServiceImplTest {
     }
 
     @Test
-    void testCrearTamano() {
+    void crearTamano_ShouldReturnTamanoDTO() {
         when(tamanoMapper.crearTamanoDTOToTamano(any(CrearTamanoDTO.class))).thenReturn(tamano);
         when(tamanoRepository.save(any(Tamano.class))).thenReturn(tamano);
         when(tamanoMapper.tamanoToTamanoDTO(any(Tamano.class))).thenReturn(tamanoDTO);
 
         TamanoDTO result = tamanoService.crearTamano(crearTamanoDTO);
 
-        assertNotNull(result);
-        assertEquals(tamanoDTO.getId(), result.getId());
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(tamanoDTO.getId());
         verify(tamanoRepository, times(1)).save(any(Tamano.class));
     }
 
     @Test
-    void testObtenerTamanoPorId() {
+    void obtenerTamanoPorId_ShouldReturnTamanoDTO() {
         when(tamanoRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.of(tamano));
         when(tamanoMapper.tamanoToTamanoDTO(any(Tamano.class))).thenReturn(tamanoDTO);
 
         TamanoDTO result = tamanoService.obtenerTamanoPorId(1L);
 
-        assertNotNull(result);
-        assertEquals(tamanoDTO.getId(), result.getId());
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(tamanoDTO.getId());
     }
 
     @Test
-    void testObtenerTamanoPorId_NotFound() {
+    void obtenerTamanoPorId_ShouldThrowExceptionCuandoNoExiste() {
         when(tamanoRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> tamanoService.obtenerTamanoPorId(1L));
+        assertThatThrownBy(() -> tamanoService.obtenerTamanoPorId(1L))
+                .isInstanceOf(RuntimeException.class);
     }
 
     @Test
-    void testObtenerTodosLosTamanos() {
+    void obtenerTodosLosTamanos_ShouldReturnListDeTamanoDTO() {
         when(tamanoRepository.findAllByEstadoTrue()).thenReturn(Collections.singletonList(tamano));
         when(tamanoMapper.tamanosToTamanoDTOs(anyList())).thenReturn(Collections.singletonList(tamanoDTO));
 
         List<TamanoDTO> result = tamanoService.obtenerTodosLosTamanos();
 
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
+        assertThat(result).isNotNull().hasSize(1);
     }
 
     @Test
-    void testActualizarTamano() {
+    void actualizarTamano_ShouldReturnTamanoActualizado() {
         when(tamanoRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.of(tamano));
         when(tamanoRepository.save(any(Tamano.class))).thenReturn(tamano);
         when(tamanoMapper.tamanoToTamanoDTO(any(Tamano.class))).thenReturn(tamanoDTO);
 
         TamanoDTO result = tamanoService.actualizarTamano(1L, actualizarTamanoDTO);
 
-        assertNotNull(result);
-        assertEquals(tamanoDTO.getId(), result.getId());
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(tamanoDTO.getId());
         verify(tamanoRepository, times(1)).save(tamano);
     }
 
     @Test
-    void testEliminarTamano() {
+    void actualizarTamano_ShouldThrowExceptionCuandoNoExiste() {
+        when(tamanoRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tamanoService.actualizarTamano(1L, actualizarTamanoDTO))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void eliminarTamano_ShouldInactivarTamano() {
         when(tamanoRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.of(tamano));
-        
+
         tamanoService.eliminarTamano(1L);
 
-        assertFalse(tamano.isEstado());
+        assertThat(tamano.isEstado()).isFalse();
         verify(tamanoRepository, times(1)).save(tamano);
     }
 
     @Test
-    void testObtenerTamanosPorTipoReceta() {
+    void eliminarTamano_ShouldThrowExceptionCuandoNoExiste() {
+        when(tamanoRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> tamanoService.eliminarTamano(1L))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void obtenerTamanosPorTipoReceta_ShouldReturnListFiltrada() {
         when(tamanoRepository.findAllByTipoRecetaAndEstadoTrue(TipoReceta.TORTA)).thenReturn(Collections.singletonList(tamano));
         when(tamanoMapper.tamanosToTamanoDTOs(anyList())).thenReturn(Collections.singletonList(tamanoDTO));
 
         List<TamanoDTO> result = tamanoService.obtenerTamanosPorTipoReceta(TipoReceta.TORTA);
 
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-    }
-
-    @Test
-    void testActualizarTamano_NotFound() {
-        when(tamanoRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.empty());
-
-        assertThrows(RuntimeException.class, () -> tamanoService.actualizarTamano(1L, actualizarTamanoDTO));
-    }
-
-    @Test
-    void testEliminarTamano_NotFound() {
-        when(tamanoRepository.findByIdAndEstadoTrue(1L)).thenReturn(Optional.empty());
-
-        assertThrows(RuntimeException.class, () -> tamanoService.eliminarTamano(1L));
+        assertThat(result).isNotNull().hasSize(1);
     }
 }

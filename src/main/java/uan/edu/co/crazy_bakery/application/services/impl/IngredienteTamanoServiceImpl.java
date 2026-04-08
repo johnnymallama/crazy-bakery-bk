@@ -1,10 +1,11 @@
-package uan.edu.co.crazy_bakery.application.services;
+package uan.edu.co.crazy_bakery.application.services.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearIngredienteTamanoDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.IngredienteTamanoDTO;
 import uan.edu.co.crazy_bakery.application.mappers.IngredienteTamanoMapper;
+import uan.edu.co.crazy_bakery.application.services.IngredienteTamanoService;
 import uan.edu.co.crazy_bakery.domain.model.IngredienteTamano;
 import uan.edu.co.crazy_bakery.domain.model.Tamano;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.IngredienteTamanoRepository;

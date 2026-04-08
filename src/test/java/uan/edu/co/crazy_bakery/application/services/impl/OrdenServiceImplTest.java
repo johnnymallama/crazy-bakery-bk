@@ -2,8 +2,9 @@ package uan.edu.co.crazy_bakery.application.services.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import uan.edu.co.crazy_bakery.application.dto.requests.AgregarNotaOrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearOrdenDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.NotaDTO;
@@ -22,10 +23,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class OrdenServiceImplTest {
 
     @Mock
@@ -38,7 +42,7 @@ class OrdenServiceImplTest {
     private RecetaRepository recetaRepository;
 
     @Mock
-    private NotaRepository notaRepository; // Mock añadido
+    private NotaRepository notaRepository;
 
     @Mock
     private OrdenMapper ordenMapper;
@@ -52,8 +56,6 @@ class OrdenServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        // Constructor actualizado con notaRepository y historyMonthCount
         ordenService = new OrdenServiceImpl(ordenRepository, usuarioRepository, recetaRepository, notaRepository, ordenMapper, 10, HISTORY_MONTH_COUNT);
 
         usuario = new Usuario();
@@ -65,18 +67,18 @@ class OrdenServiceImplTest {
         usuarioDTO.setNombre("Test User");
     }
 
-    private OrdenDTO createOrdenDTO(Long ordenId, EstadoOrden estado, UsuarioDTO usuario) {
+    private OrdenDTO buildOrdenDTO(Long id, EstadoOrden estado) {
         return OrdenDTO.builder()
-                .id(ordenId)
+                .id(id)
                 .estado(estado)
-                .usuario(usuario)
-                .notas(new ArrayList<>()) // Inicializar lista de notas
+                .usuario(usuarioDTO)
+                .notas(new ArrayList<>())
                 .build();
     }
 
-    private Orden createOrden(Long ordenId, EstadoOrden estado, Usuario usuario) {
+    private Orden buildOrden(Long id, EstadoOrden estado) {
         Orden orden = new Orden();
-        orden.setId(ordenId);
+        orden.setId(id);
         orden.setEstado(estado);
         orden.setUsuario(usuario);
         orden.setNotas(new ArrayList<>());
@@ -85,9 +87,9 @@ class OrdenServiceImplTest {
     }
 
     @Test
-    void testCreateOrden() {
-        // Se elimina la lista de notas de la creación
+    void createOrden_ShouldReturnOrdenDTO() {
         CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO("user123", List.of(1L), null);
+
         Torta torta = new Torta();
         torta.setValor(10.0f);
         Receta receta = new Receta();
@@ -95,8 +97,9 @@ class OrdenServiceImplTest {
         receta.setCostoManoObra(10.0f);
         receta.setCostoOperativo(20.0f);
         receta.setCantidad(1);
-        Orden orden = createOrden(1L, EstadoOrden.CREADO, usuario);
-        OrdenDTO ordenDTO = createOrdenDTO(1L, EstadoOrden.CREADO, usuarioDTO);
+
+        Orden orden = buildOrden(1L, EstadoOrden.CREADO);
+        OrdenDTO ordenDTO = buildOrdenDTO(1L, EstadoOrden.CREADO);
         ordenDTO.setValorTotal(44.0f);
 
         when(usuarioRepository.findById("user123")).thenReturn(Optional.of(usuario));
@@ -107,150 +110,212 @@ class OrdenServiceImplTest {
 
         OrdenDTO result = ordenService.createOrden(crearOrdenDTO);
 
-        assertNotNull(result);
-        assertEquals(44.0f, result.getValorTotal());
-        assertNotNull(result.getUsuario());
-        assertEquals("user123", result.getUsuario().getId());
-    }
-
-
-    @Test
-    void testAgregarNotaOrden() {
-        // Arrange
-        Long ordenId = 1L;
-        String notaText = "Esta es una nota de prueba.";
-        String userId = "user123";
-
-        AgregarNotaOrdenDTO agregarNotaOrdenDTO = new AgregarNotaOrdenDTO();
-        agregarNotaOrdenDTO.setNota(notaText);
-        agregarNotaOrdenDTO.setUsuarioId(userId);
-
-        Orden ordenInicial = createOrden(ordenId, EstadoOrden.CREADO, usuario);
-
-        Nota nuevaNota = new Nota();
-        nuevaNota.setId(1L);
-        nuevaNota.setNota(notaText);
-        nuevaNota.setUsuario(usuario);
-        nuevaNota.setOrden(ordenInicial);
-
-        // Simular el estado de la orden después de añadir la nota
-        Orden ordenActualizada = createOrden(ordenId, EstadoOrden.CREADO, usuario);
-        ordenActualizada.getNotas().add(nuevaNota);
-
-        NotaDTO notaDTO = NotaDTO.builder().build();
-        notaDTO.setNota(notaText);
-        notaDTO.setUsuarioNombre(usuario.getNombre());
-
-        OrdenDTO ordenDTOFinal = createOrdenDTO(ordenId, EstadoOrden.CREADO, usuarioDTO);
-        ordenDTOFinal.getNotas().add(notaDTO);
-
-        // Act (Mocks)
-        when(ordenRepository.findById(ordenId))
-                .thenReturn(Optional.of(ordenInicial)) // Primera llamada: devuelve la orden sin la nota
-                .thenReturn(Optional.of(ordenActualizada)); // Segunda llamada: devuelve la orden con la nota
-
-        when(usuarioRepository.findById(userId)).thenReturn(Optional.of(usuario));
-        when(notaRepository.save(any(Nota.class))).thenReturn(nuevaNota);
-        when(ordenMapper.toDto(ordenActualizada)).thenReturn(ordenDTOFinal);
-
-        // Assert
-        OrdenDTO result = ordenService.agregarNotaOrden(ordenId, agregarNotaOrdenDTO);
-
-        assertNotNull(result);
-        assertFalse(result.getNotas().isEmpty());
-        assertEquals(1, result.getNotas().size());
-        assertEquals(notaText, result.getNotas().get(0).getNota());
-        assertEquals(usuario.getNombre(), result.getNotas().get(0).getUsuarioNombre());
-
-        verify(usuarioRepository).findById(userId);
-        verify(notaRepository).save(any(Nota.class));
-        verify(ordenRepository, times(2)).findById(ordenId); // Se llama dos veces
-        verify(ordenMapper).toDto(ordenActualizada);
+        assertThat(result).isNotNull();
+        assertThat(result.getValorTotal()).isEqualTo(44.0f);
+        assertThat(result.getUsuario().getId()).isEqualTo("user123");
     }
 
     @Test
-    void testGetOrdenesByUsuario() {
-        String usuarioId = "user123";
-        Orden orden = createOrden(1L, EstadoOrden.CREADO, usuario);
-        OrdenDTO ordenDTO = createOrdenDTO(1L, EstadoOrden.CREADO, usuarioDTO);
+    void createOrden_ShouldThrowExceptionCuandoUsuarioNoExiste() {
+        CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO("inexistente", List.of(1L), null);
+        when(usuarioRepository.findById("inexistente")).thenReturn(Optional.empty());
 
-        when(ordenRepository.findByUsuarioIdAndFechaAfterOrderByFechaDesc(eq(usuarioId), any(Date.class))).thenReturn(List.of(orden));
+        assertThatThrownBy(() -> ordenService.createOrden(crearOrdenDTO))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void createOrden_ShouldThrowExceptionCuandoRecetasNoCoinciden() {
+        CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO("user123", List.of(1L, 2L), null);
+
+        when(usuarioRepository.findById("user123")).thenReturn(Optional.of(usuario));
+        when(recetaRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(new Receta()));
+
+        assertThatThrownBy(() -> ordenService.createOrden(crearOrdenDTO))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void getAllOrdenes_ShouldReturnListDeOrdenes() {
+        Orden orden = buildOrden(1L, EstadoOrden.CREADO);
+        OrdenDTO ordenDTO = buildOrdenDTO(1L, EstadoOrden.CREADO);
+
+        when(ordenRepository.findByFechaAfterOrderByFechaDesc(any(Date.class))).thenReturn(List.of(orden));
         when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
 
-        List<OrdenDTO> result = ordenService.getOrdenesByUsuario(usuarioId);
+        List<OrdenDTO> result = ordenService.getAllOrdenes();
 
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-        OrdenDTO resultOrden = result.get(0);
-        assertNotNull(resultOrden.getUsuario());
-        assertEquals(usuarioId, resultOrden.getUsuario().getId());
-        assertEquals("Test User", resultOrden.getUsuario().getNombre());
-
-        verify(ordenRepository, times(1)).findByUsuarioIdAndFechaAfterOrderByFechaDesc(eq(usuarioId), any(Date.class));
+        assertThat(result).isNotNull().hasSize(1);
+        assertThat(result.get(0).getEstado()).isEqualTo(EstadoOrden.CREADO);
+        verify(ordenRepository, times(1)).findByFechaAfterOrderByFechaDesc(any(Date.class));
     }
 
     @Test
-    void testGetOrdenesByEstado() {
-        Orden orden = createOrden(1L, EstadoOrden.CREADO, usuario);
-        OrdenDTO ordenDTO = createOrdenDTO(1L, EstadoOrden.CREADO, usuarioDTO);
+    void getOrdenById_ShouldReturnOrdenCuandoExiste() {
+        Orden orden = buildOrden(1L, EstadoOrden.CREADO);
+        OrdenDTO ordenDTO = buildOrdenDTO(1L, EstadoOrden.CREADO);
+
+        when(ordenRepository.findById(1L)).thenReturn(Optional.of(orden));
+        when(ordenMapper.toDto(orden)).thenReturn(ordenDTO);
+
+        OrdenDTO result = ordenService.getOrdenById(1L);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+    }
+
+    @Test
+    void getOrdenById_ShouldThrowExceptionCuandoNoExiste() {
+        when(ordenRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> ordenService.getOrdenById(99L))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void getOrdenesByUsuario_ShouldReturnListDeOrdenes() {
+        Orden orden = buildOrden(1L, EstadoOrden.CREADO);
+        OrdenDTO ordenDTO = buildOrdenDTO(1L, EstadoOrden.CREADO);
+
+        when(ordenRepository.findByUsuarioIdAndFechaAfterOrderByFechaDesc(eq("user123"), any(Date.class))).thenReturn(List.of(orden));
+        when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
+
+        List<OrdenDTO> result = ordenService.getOrdenesByUsuario("user123");
+
+        assertThat(result).isNotEmpty().hasSize(1);
+        assertThat(result.get(0).getUsuario().getId()).isEqualTo("user123");
+        verify(ordenRepository).findByUsuarioIdAndFechaAfterOrderByFechaDesc(eq("user123"), any(Date.class));
+    }
+
+    @Test
+    void getOrdenesByEstado_ShouldReturnListFiltradaPorEstado() {
+        Orden orden = buildOrden(1L, EstadoOrden.CREADO);
+        OrdenDTO ordenDTO = buildOrdenDTO(1L, EstadoOrden.CREADO);
 
         when(ordenRepository.findByEstado(EstadoOrden.CREADO)).thenReturn(List.of(orden));
         when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
 
         List<OrdenDTO> result = ordenService.getOrdenesByEstado(EstadoOrden.CREADO);
 
-        assertFalse(result.isEmpty());
-        assertNotNull(result.get(0).getUsuario());
-        assertEquals("user123", result.get(0).getUsuario().getId());
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getUsuario().getId()).isEqualTo("user123");
     }
 
     @Test
-    void testGetOrdenesByFecha() {
-        Date fechaInicio = new Date();
-        Date fechaFin = new Date();
-        Orden orden = createOrden(1L, EstadoOrden.CREADO, usuario);
-        OrdenDTO ordenDTO = createOrdenDTO(1L, EstadoOrden.CREADO, usuarioDTO);
+    void getOrdenesByFecha_ShouldReturnListFiltradaPorRango() {
+        Orden orden = buildOrden(1L, EstadoOrden.CREADO);
+        OrdenDTO ordenDTO = buildOrdenDTO(1L, EstadoOrden.CREADO);
 
         when(ordenRepository.findByFechaGreaterThanEqualAndFechaLessThan(any(Date.class), any(Date.class))).thenReturn(List.of(orden));
         when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
 
-        List<OrdenDTO> result = ordenService.getOrdenesByFecha(fechaInicio, fechaFin);
+        List<OrdenDTO> result = ordenService.getOrdenesByFecha(new Date(), new Date());
 
-        assertFalse(result.isEmpty());
-        assertNotNull(result.get(0).getUsuario());
-        assertEquals("user123", result.get(0).getUsuario().getId());
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getUsuario().getId()).isEqualTo("user123");
     }
 
     @Test
-    void testCambiarEstadoOrden() {
-        Long ordenId = 1L;
-        EstadoOrden nuevoEstado = EstadoOrden.EN_PROCESO;
-        Orden orden = createOrden(ordenId, EstadoOrden.CREADO, usuario);
-        OrdenDTO ordenDTO = createOrdenDTO(ordenId, nuevoEstado, usuarioDTO);
+    void cambiarEstadoOrden_ShouldActualizarEstado() {
+        Orden orden = buildOrden(1L, EstadoOrden.CREADO);
+        OrdenDTO ordenDTO = buildOrdenDTO(1L, EstadoOrden.EN_PROCESO);
 
-        when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(orden));
-        when(ordenRepository.save(any(Orden.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(ordenRepository.findById(1L)).thenReturn(Optional.of(orden));
+        when(ordenRepository.save(any(Orden.class))).thenAnswer(inv -> inv.getArgument(0));
         when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
 
-        OrdenDTO result = ordenService.cambiarEstadoOrden(ordenId, nuevoEstado);
+        OrdenDTO result = ordenService.cambiarEstadoOrden(1L, EstadoOrden.EN_PROCESO);
 
-        assertNotNull(result);
-        assertEquals(nuevoEstado, result.getEstado());
-        assertNotNull(result.getUsuario());
-        assertEquals("user123", result.getUsuario().getId());
+        assertThat(result).isNotNull();
+        assertThat(result.getEstado()).isEqualTo(EstadoOrden.EN_PROCESO);
+        assertThat(result.getUsuario().getId()).isEqualTo("user123");
         verify(ordenRepository).save(orden);
     }
 
     @Test
-    void testAgregarRecetaOrden() {
+    void cambiarEstadoOrden_ShouldThrowExceptionCuandoNoExiste() {
+        when(ordenRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> ordenService.cambiarEstadoOrden(99L, EstadoOrden.EN_PROCESO))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void agregarNotaOrden_ShouldAgregarNotaCorrectamente() {
+        Long ordenId = 1L;
+        AgregarNotaOrdenDTO dto = new AgregarNotaOrdenDTO();
+        dto.setNota("Sin gluten");
+        dto.setUsuarioId("user123");
+
+        Orden ordenInicial = buildOrden(ordenId, EstadoOrden.CREADO);
+        Nota nuevaNota = new Nota();
+        nuevaNota.setId(1L);
+        nuevaNota.setNota("Sin gluten");
+        nuevaNota.setUsuario(usuario);
+
+        Orden ordenActualizada = buildOrden(ordenId, EstadoOrden.CREADO);
+        ordenActualizada.getNotas().add(nuevaNota);
+
+        NotaDTO notaDTO = NotaDTO.builder().build();
+        notaDTO.setNota("Sin gluten");
+        notaDTO.setUsuarioNombre(usuario.getNombre());
+
+        OrdenDTO ordenDTOFinal = buildOrdenDTO(ordenId, EstadoOrden.CREADO);
+        ordenDTOFinal.getNotas().add(notaDTO);
+
+        when(ordenRepository.findById(ordenId))
+                .thenReturn(Optional.of(ordenInicial))
+                .thenReturn(Optional.of(ordenActualizada));
+        when(usuarioRepository.findById("user123")).thenReturn(Optional.of(usuario));
+        when(notaRepository.save(any(Nota.class))).thenReturn(nuevaNota);
+        when(ordenMapper.toDto(ordenActualizada)).thenReturn(ordenDTOFinal);
+
+        OrdenDTO result = ordenService.agregarNotaOrden(ordenId, dto);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getNotas()).hasSize(1);
+        assertThat(result.getNotas().get(0).getNota()).isEqualTo("Sin gluten");
+        verify(notaRepository).save(any(Nota.class));
+        verify(ordenRepository, times(2)).findById(ordenId);
+    }
+
+    @Test
+    void agregarNotaOrden_ShouldThrowExceptionCuandoOrdenNoExiste() {
+        AgregarNotaOrdenDTO dto = new AgregarNotaOrdenDTO();
+        dto.setNota("Nota");
+        dto.setUsuarioId("user123");
+
+        when(ordenRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> ordenService.agregarNotaOrden(99L, dto))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void agregarNotaOrden_ShouldThrowExceptionCuandoUsuarioNoExiste() {
+        Long ordenId = 1L;
+        AgregarNotaOrdenDTO dto = new AgregarNotaOrdenDTO();
+        dto.setNota("Nota");
+        dto.setUsuarioId("inexistente");
+
+        Orden orden = buildOrden(ordenId, EstadoOrden.CREADO);
+        when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(orden));
+        when(usuarioRepository.findById("inexistente")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> ordenService.agregarNotaOrden(ordenId, dto))
+                .isInstanceOf(RuntimeException.class);
+    }
+
+    @Test
+    void agregarRecetaOrden_ShouldAgregarRecetaYActualizarValor() {
         Long ordenId = 1L;
         Long recetaId = 2L;
-        Orden orden = createOrden(ordenId, EstadoOrden.CREADO, usuario);
+
+        Orden orden = buildOrden(ordenId, EstadoOrden.CREADO);
         orden.setValorTotal(50.0f);
 
         Torta torta = new Torta();
         torta.setValor(10.0f);
-
         Receta receta = new Receta();
         receta.setId(recetaId);
         receta.setCostoManoObra(10.0f);
@@ -258,177 +323,53 @@ class OrdenServiceImplTest {
         receta.setCantidad(1);
         receta.setTorta(torta);
 
-        OrdenDTO ordenDTO = createOrdenDTO(ordenId, EstadoOrden.CREADO, usuarioDTO);
+        OrdenDTO ordenDTO = buildOrdenDTO(ordenId, EstadoOrden.CREADO);
         ordenDTO.setValorTotal(44.0f);
 
         when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(orden));
         when(recetaRepository.findById(recetaId)).thenReturn(Optional.of(receta));
-        when(ordenRepository.save(any(Orden.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(ordenRepository.save(any(Orden.class))).thenAnswer(inv -> inv.getArgument(0));
         when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
 
         OrdenDTO result = ordenService.agregarRecetaOrden(ordenId, recetaId);
 
-        assertNotNull(result);
-        assertEquals(44.0f, result.getValorTotal());
-        assertNotNull(result.getUsuario());
-        assertEquals("user123", result.getUsuario().getId());
+        assertThat(result).isNotNull();
+        assertThat(result.getValorTotal()).isEqualTo(44.0f);
+        assertThat(result.getUsuario().getId()).isEqualTo("user123");
         verify(ordenRepository).save(orden);
     }
 
     @Test
-    void testGetAllOrdenes() {
-        // Arrange
-        Orden orden = createOrden(1L, EstadoOrden.CREADO, usuario);
-        OrdenDTO ordenDTO = createOrdenDTO(1L, EstadoOrden.CREADO, usuarioDTO);
+    void agregarRecetaOrden_ShouldThrowExceptionCuandoOrdenNoExiste() {
+        when(ordenRepository.findById(99L)).thenReturn(Optional.empty());
 
-        when(ordenRepository.findByFechaAfterOrderByFechaDesc(any(Date.class))).thenReturn(List.of(orden));
-        when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
-
-        // Act
-        List<OrdenDTO> result = ordenService.getAllOrdenes();
-
-        // Assert
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-        assertEquals(1, result.size());
-        assertEquals(EstadoOrden.CREADO, result.get(0).getEstado());
-        verify(ordenRepository, times(1)).findByFechaAfterOrderByFechaDesc(any(Date.class));
+        assertThatThrownBy(() -> ordenService.agregarRecetaOrden(99L, 1L))
+                .isInstanceOf(RuntimeException.class);
     }
 
     @Test
-    void testGetOrdenById_cuandoExiste() {
-        // Arrange
-        Long ordenId = 1L;
-        Orden orden = createOrden(ordenId, EstadoOrden.CREADO, usuario);
-        OrdenDTO ordenDTO = createOrdenDTO(ordenId, EstadoOrden.CREADO, usuarioDTO);
+    void agregarRecetaOrden_ShouldThrowExceptionCuandoRecetaNoExiste() {
+        Orden orden = buildOrden(1L, EstadoOrden.CREADO);
+        when(ordenRepository.findById(1L)).thenReturn(Optional.of(orden));
+        when(recetaRepository.findById(99L)).thenReturn(Optional.empty());
 
-        when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(orden));
-        when(ordenMapper.toDto(orden)).thenReturn(ordenDTO);
-
-        // Act
-        OrdenDTO result = ordenService.getOrdenById(ordenId);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(ordenId, result.getId());
+        assertThatThrownBy(() -> ordenService.agregarRecetaOrden(1L, 99L))
+                .isInstanceOf(RuntimeException.class);
     }
 
     @Test
-    void testGetOrdenById_cuandoNoExiste_lanzaExcepcion() {
-        // Arrange
-        Long ordenId = 99L;
-        when(ordenRepository.findById(ordenId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> ordenService.getOrdenById(ordenId));
-    }
-
-    @Test
-    void testCreateOrden_cuandoUsuarioNoExiste_lanzaExcepcion() {
-        // Arrange
-        CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO("usuario_inexistente", List.of(1L), null);
-        when(usuarioRepository.findById("usuario_inexistente")).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> ordenService.createOrden(crearOrdenDTO));
-    }
-
-    @Test
-    void testCreateOrden_cuandoRecetasNoCoinciden_lanzaExcepcion() {
-        // Arrange
-        CrearOrdenDTO crearOrdenDTO = new CrearOrdenDTO("user123", List.of(1L, 2L), null);
-
-        when(usuarioRepository.findById("user123")).thenReturn(Optional.of(usuario));
-        // Solo se devuelve 1 receta aunque se pidieron 2
-        Receta receta = new Receta();
-        when(recetaRepository.findAllById(List.of(1L, 2L))).thenReturn(List.of(receta));
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> ordenService.createOrden(crearOrdenDTO));
-    }
-
-    @Test
-    void testCambiarEstadoOrden_cuandoNoExiste_lanzaExcepcion() {
-        // Arrange
-        Long ordenId = 99L;
-        when(ordenRepository.findById(ordenId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> ordenService.cambiarEstadoOrden(ordenId, EstadoOrden.EN_PROCESO));
-    }
-
-    @Test
-    void testAgregarNotaOrden_cuandoOrdenNoExiste_lanzaExcepcion() {
-        // Arrange
-        Long ordenId = 99L;
-        AgregarNotaOrdenDTO dto = new AgregarNotaOrdenDTO();
-        dto.setNota("Nota");
-        dto.setUsuarioId("user123");
-
-        when(ordenRepository.findById(ordenId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> ordenService.agregarNotaOrden(ordenId, dto));
-    }
-
-    @Test
-    void testAgregarNotaOrden_cuandoUsuarioNoExiste_lanzaExcepcion() {
-        // Arrange
-        Long ordenId = 1L;
-        AgregarNotaOrdenDTO dto = new AgregarNotaOrdenDTO();
-        dto.setNota("Nota");
-        dto.setUsuarioId("usuario_inexistente");
-
-        Orden orden = createOrden(ordenId, EstadoOrden.CREADO, usuario);
-        when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(orden));
-        when(usuarioRepository.findById("usuario_inexistente")).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> ordenService.agregarNotaOrden(ordenId, dto));
-    }
-
-    @Test
-    void testAgregarRecetaOrden_cuandoOrdenNoExiste_lanzaExcepcion() {
-        // Arrange
-        Long ordenId = 99L;
-        Long recetaId = 1L;
-        when(ordenRepository.findById(ordenId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> ordenService.agregarRecetaOrden(ordenId, recetaId));
-    }
-
-    @Test
-    void testAgregarRecetaOrden_cuandoRecetaNoExiste_lanzaExcepcion() {
-        // Arrange
-        Long ordenId = 1L;
-        Long recetaId = 99L;
-        Orden orden = createOrden(ordenId, EstadoOrden.CREADO, usuario);
-
-        when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(orden));
-        when(recetaRepository.findById(recetaId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThrows(RuntimeException.class, () -> ordenService.agregarRecetaOrden(ordenId, recetaId));
-    }
-
-    @Test
-    void testAgregarRecetaOrden_cuandoRecetasEsNull_inicializaLista() {
-        // Arrange
+    void agregarRecetaOrden_ShouldInicializarListaCuandoRecetasEsNull() {
         Long ordenId = 1L;
         Long recetaId = 2L;
 
-        // Crear orden con recetas = null (sin llamar a setRecetas)
         Orden ordenConRecetasNull = new Orden();
         ordenConRecetasNull.setId(ordenId);
         ordenConRecetasNull.setEstado(EstadoOrden.CREADO);
         ordenConRecetasNull.setUsuario(usuario);
         ordenConRecetasNull.setNotas(new ArrayList<>());
-        // NO llamamos setRecetas, por lo que será null
 
         Torta torta = new Torta();
         torta.setValor(10.0f);
-
         Receta receta = new Receta();
         receta.setId(recetaId);
         receta.setCostoManoObra(10.0f);
@@ -436,18 +377,16 @@ class OrdenServiceImplTest {
         receta.setCantidad(1);
         receta.setTorta(torta);
 
-        OrdenDTO ordenDTO = createOrdenDTO(ordenId, EstadoOrden.CREADO, usuarioDTO);
+        OrdenDTO ordenDTO = buildOrdenDTO(ordenId, EstadoOrden.CREADO);
 
         when(ordenRepository.findById(ordenId)).thenReturn(Optional.of(ordenConRecetasNull));
         when(recetaRepository.findById(recetaId)).thenReturn(Optional.of(receta));
-        when(ordenRepository.save(any(Orden.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(ordenRepository.save(any(Orden.class))).thenAnswer(inv -> inv.getArgument(0));
         when(ordenMapper.toDto(any(Orden.class))).thenReturn(ordenDTO);
 
-        // Act
         OrdenDTO result = ordenService.agregarRecetaOrden(ordenId, recetaId);
 
-        // Assert
-        assertNotNull(result);
+        assertThat(result).isNotNull();
         verify(ordenRepository).save(ordenConRecetasNull);
     }
 }

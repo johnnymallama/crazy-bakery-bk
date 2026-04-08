@@ -2,24 +2,26 @@ package uan.edu.co.crazy_bakery.application.services.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import uan.edu.co.crazy_bakery.application.dto.requests.ActualizarUsuarioDTO;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearUsuarioDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.UsuarioDTO;
 import uan.edu.co.crazy_bakery.domain.model.Usuario;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.UsuarioRepository;
 
-import uan.edu.co.crazy_bakery.application.dto.requests.ActualizarUsuarioDTO;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class UsuarioServiceImplTest {
 
     @Mock
@@ -28,139 +30,105 @@ class UsuarioServiceImplTest {
     @InjectMocks
     private UsuarioServiceImpl usuarioService;
 
+    private Usuario usuario;
+
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        usuario = new Usuario();
+        usuario.setId("user123");
+        usuario.setNombre("Test User");
+        usuario.setEmail("test@example.com");
+        usuario.setEstado(true);
     }
 
     @Test
-    void testCrearUsuario() {
+    void crearUsuario_ShouldReturnUsuarioDTO() {
         CrearUsuarioDTO crearUsuarioDTO = new CrearUsuarioDTO();
         crearUsuarioDTO.setNombre("Test User");
-
-        Usuario usuario = new Usuario();
-        usuario.setId("1");
-        usuario.setNombre("Test User");
+        crearUsuarioDTO.setEmail("test@example.com");
 
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
 
         UsuarioDTO result = usuarioService.crearUsuario(crearUsuarioDTO);
 
-        assertNotNull(result);
-        assertEquals("1", result.getId());
-        assertEquals("Test User", result.getNombre());
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo("user123");
+        assertThat(result.getNombre()).isEqualTo("Test User");
+        assertThat(result.getEmail()).isEqualTo("test@example.com");
     }
 
     @Test
-    void testGetUsuarioFound() {
-        String id = "1";
-        Usuario usuario = new Usuario();
-        usuario.setId(id);
-        when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
+    void getUsuario_ShouldReturnUsuarioCuandoExiste() {
+        when(usuarioRepository.findById("user123")).thenReturn(Optional.of(usuario));
 
-        // The service now returns Optional<Usuario> instead of Optional<UsuarioDTO>
-        Optional<Usuario> result = usuarioService.getUsuario(id);
+        Optional<Usuario> result = usuarioService.getUsuario("user123");
 
-        assertTrue(result.isPresent());
-        assertEquals(id, result.get().getId());
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo("user123");
     }
 
     @Test
-    void testGetUsuarioNotFound() {
-        String id = "1";
-        when(usuarioRepository.findById(id)).thenReturn(Optional.empty());
+    void getUsuario_ShouldReturnEmptyOptionalCuandoNoExiste() {
+        when(usuarioRepository.findById("user123")).thenReturn(Optional.empty());
 
-        // The service now returns Optional<Usuario> instead of Optional<UsuarioDTO>
-        Optional<Usuario> result = usuarioService.getUsuario(id);
+        Optional<Usuario> result = usuarioService.getUsuario("user123");
 
-        assertFalse(result.isPresent());
+        assertThat(result).isNotPresent();
     }
 
     @Test
-    void testGetAllUsuarios() {
-        Usuario usuario = new Usuario();
-        usuario.setId("1");
-        List<Usuario> usuarioList = Collections.singletonList(usuario);
-        // The service now calls findAllByEstado(true)
-        when(usuarioRepository.findAllByEstado(true)).thenReturn(usuarioList);
+    void getAllUsuarios_ShouldReturnListDeUsuariosActivos() {
+        when(usuarioRepository.findAllByEstado(true)).thenReturn(Collections.singletonList(usuario));
 
         List<UsuarioDTO> result = usuarioService.getAllUsuarios();
 
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("1", result.get(0).getId());
+        assertThat(result).isNotNull().hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo("user123");
     }
 
     @Test
-    void testInactivarUsuario_cuandoExiste_retornaUsuarioInactivo() {
-        // Arrange
-        String id = "1";
-        Usuario usuario = new Usuario();
-        usuario.setId(id);
-        usuario.setNombre("Test User");
-        usuario.setEstado(true);
-
-        when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
+    void inactivarUsuario_ShouldReturnUsuarioCuandoExiste() {
+        when(usuarioRepository.findById("user123")).thenReturn(Optional.of(usuario));
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
 
-        // Act
-        Optional<UsuarioDTO> result = usuarioService.inactivarUsuario(id);
+        Optional<UsuarioDTO> result = usuarioService.inactivarUsuario("user123");
 
-        // Assert
-        assertTrue(result.isPresent());
-        assertEquals(id, result.get().getId());
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo("user123");
     }
 
     @Test
-    void testInactivarUsuario_cuandoNoExiste_retornaEmpty() {
-        // Arrange
-        String id = "inexistente";
-        when(usuarioRepository.findById(id)).thenReturn(Optional.empty());
+    void inactivarUsuario_ShouldReturnEmptyOptionalCuandoNoExiste() {
+        when(usuarioRepository.findById("inexistente")).thenReturn(Optional.empty());
 
-        // Act
-        Optional<UsuarioDTO> result = usuarioService.inactivarUsuario(id);
+        Optional<UsuarioDTO> result = usuarioService.inactivarUsuario("inexistente");
 
-        // Assert
-        assertFalse(result.isPresent());
+        assertThat(result).isNotPresent();
     }
 
     @Test
-    void testActualizarUsuario_cuandoExiste_retornaUsuarioActualizado() {
-        // Arrange
-        String id = "1";
-        Usuario usuario = new Usuario();
-        usuario.setId(id);
-        usuario.setNombre("Test User");
-
+    void actualizarUsuario_ShouldReturnUsuarioActualizadoCuandoExiste() {
         ActualizarUsuarioDTO dto = new ActualizarUsuarioDTO();
         dto.setTelefono("3001234567");
         dto.setDireccion("Calle 10 # 20-30");
         dto.setDepartamento("Cundinamarca");
         dto.setCiudad("Bogotá");
 
-        when(usuarioRepository.findById(id)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.findById("user123")).thenReturn(Optional.of(usuario));
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
 
-        // Act
-        Optional<UsuarioDTO> result = usuarioService.actualizarUsuario(id, dto);
+        Optional<UsuarioDTO> result = usuarioService.actualizarUsuario("user123", dto);
 
-        // Assert
-        assertTrue(result.isPresent());
-        assertEquals(id, result.get().getId());
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo("user123");
     }
 
     @Test
-    void testActualizarUsuario_cuandoNoExiste_retornaEmpty() {
-        // Arrange
-        String id = "inexistente";
-        ActualizarUsuarioDTO dto = new ActualizarUsuarioDTO();
+    void actualizarUsuario_ShouldReturnEmptyOptionalCuandoNoExiste() {
+        when(usuarioRepository.findById(eq("inexistente"))).thenReturn(Optional.empty());
 
-        when(usuarioRepository.findById(id)).thenReturn(Optional.empty());
+        Optional<UsuarioDTO> result = usuarioService.actualizarUsuario("inexistente", new ActualizarUsuarioDTO());
 
-        // Act
-        Optional<UsuarioDTO> result = usuarioService.actualizarUsuario(id, dto);
-
-        // Assert
-        assertFalse(result.isPresent());
+        assertThat(result).isNotPresent();
     }
 }

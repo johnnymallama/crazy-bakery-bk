@@ -1,180 +1,169 @@
 package uan.edu.co.crazy_bakery.infrastructure.web.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import uan.edu.co.crazy_bakery.application.dto.requests.ActualizarUsuarioDTO;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearUsuarioDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.UsuarioDTO;
 import uan.edu.co.crazy_bakery.application.services.UsuarioService;
-import uan.edu.co.crazy_bakery.domain.model.Usuario; // Importación necesaria
+import uan.edu.co.crazy_bakery.domain.model.Usuario;
+import uan.edu.co.crazy_bakery.infrastructure.web.security.FirebaseTokenFilter;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(
+        controllers = UsuarioController.class,
+        excludeAutoConfiguration = {SecurityAutoConfiguration.class},
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = FirebaseTokenFilter.class)
+)
 class UsuarioControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private UsuarioService usuarioService;
 
-    @InjectMocks
-    private UsuarioController usuarioController;
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    private UsuarioDTO usuarioDTO;
+    private CrearUsuarioDTO crearUsuarioDTO;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
-
-    @Test
-    void testCrearUsuario() {
-        CrearUsuarioDTO crearUsuarioDTO = new CrearUsuarioDTO();
-        crearUsuarioDTO.setEmail("test@example.com");
-        crearUsuarioDTO.setNombre("Test");
-
-        UsuarioDTO usuarioDTO = new UsuarioDTO();
-        usuarioDTO.setId("1");
-        usuarioDTO.setEmail(crearUsuarioDTO.getEmail());
-        usuarioDTO.setNombre(crearUsuarioDTO.getNombre());
+        usuarioDTO = new UsuarioDTO();
+        usuarioDTO.setId("user123");
+        usuarioDTO.setEmail("test@example.com");
+        usuarioDTO.setNombre("Test User");
         usuarioDTO.setEstado(true);
 
+        crearUsuarioDTO = new CrearUsuarioDTO();
+        crearUsuarioDTO.setEmail("test@example.com");
+        crearUsuarioDTO.setNombre("Test User");
+    }
+
+    @Test
+    void crearUsuario_Success() throws Exception {
         when(usuarioService.crearUsuario(any(CrearUsuarioDTO.class))).thenReturn(usuarioDTO);
 
-        ResponseEntity<UsuarioDTO> result = usuarioController.crearUsuario(crearUsuarioDTO);
-
-        assertNotNull(result);
-        assertEquals(HttpStatus.CREATED, result.getStatusCode());
-        assertNotNull(result.getBody());
-        assertEquals("1", result.getBody().getId());
-        assertEquals("test@example.com", result.getBody().getEmail());
-        assertEquals(true, result.getBody().isEstado());
+        mockMvc.perform(post("/usuarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(crearUsuarioDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value("user123"))
+                .andExpect(jsonPath("$.email").value("test@example.com"));
     }
 
     @Test
-    void testGetAllUsuarios() {
-        UsuarioDTO usuarioDTO = new UsuarioDTO();
-        List<UsuarioDTO> usuarioDTOList = Collections.singletonList(usuarioDTO);
-        when(usuarioService.getAllUsuarios()).thenReturn(usuarioDTOList);
+    void getAllUsuarios_Success() throws Exception {
+        when(usuarioService.getAllUsuarios()).thenReturn(Collections.singletonList(usuarioDTO));
 
-        ResponseEntity<List<UsuarioDTO>> result = usuarioController.getAllUsuarios();
-
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(1, result.getBody().size());
-        assertEquals(usuarioDTO, result.getBody().get(0));
+        mockMvc.perform(get("/usuarios"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$[0].id").value("user123"))
+                .andExpect(jsonPath("$[0].email").value("test@example.com"));
     }
 
     @Test
-    void getUsuario_whenUserIsActive_shouldReturnOk() {
-        String id = "1";
+    void getUsuario_FoundAndActive() throws Exception {
         Usuario usuario = new Usuario();
-        usuario.setId(id);
-        usuario.setEstado(true); // Usuario activo
+        usuario.setId("user123");
+        usuario.setEstado(true);
 
-        when(usuarioService.getUsuario(id)).thenReturn(Optional.of(usuario));
+        when(usuarioService.getUsuario("user123")).thenReturn(Optional.of(usuario));
 
-        ResponseEntity<?> response = usuarioController.getUsuario(id);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody() instanceof UsuarioDTO);
-        assertEquals(id, ((UsuarioDTO) response.getBody()).getId());
+        mockMvc.perform(get("/usuarios/user123"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value("user123"));
     }
 
     @Test
-    void getUsuario_whenUserIsInactive_shouldReturnNoContent() {
-        String id = "1";
+    void getUsuario_FoundAndInactive() throws Exception {
         Usuario usuario = new Usuario();
-        usuario.setId(id);
-        usuario.setEstado(false); // Usuario inactivo
+        usuario.setId("user123");
+        usuario.setEstado(false);
 
-        when(usuarioService.getUsuario(id)).thenReturn(Optional.of(usuario));
+        when(usuarioService.getUsuario("user123")).thenReturn(Optional.of(usuario));
 
-        ResponseEntity<?> response = usuarioController.getUsuario(id);
-
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        assertNull(response.getBody());
+        mockMvc.perform(get("/usuarios/user123"))
+                .andExpect(status().isNoContent());
     }
 
     @Test
-    void getUsuario_whenUserNotFound_shouldReturnNotFound() {
-        String id = "1";
-        when(usuarioService.getUsuario(id)).thenReturn(Optional.empty());
+    void getUsuario_NotFound() throws Exception {
+        when(usuarioService.getUsuario("user123")).thenReturn(Optional.empty());
 
-        ResponseEntity<?> response = usuarioController.getUsuario(id);
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        mockMvc.perform(get("/usuarios/user123"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void testInactivarUsuarioFound() {
-        String id = "1";
-        UsuarioDTO usuarioDTO = new UsuarioDTO();
-        usuarioDTO.setId(id);
+    void inactivarUsuario_Success() throws Exception {
         usuarioDTO.setEstado(false);
+        when(usuarioService.inactivarUsuario("user123")).thenReturn(Optional.of(usuarioDTO));
 
-        when(usuarioService.inactivarUsuario(id)).thenReturn(Optional.of(usuarioDTO));
-
-        ResponseEntity<UsuarioDTO> result = usuarioController.inactivarUsuario(id);
-
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertNotNull(result.getBody());
-        assertFalse(result.getBody().isEstado());
+        mockMvc.perform(delete("/usuarios/user123"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value(false));
     }
 
     @Test
-    void testInactivarUsuarioNotFound() {
-        String id = "1";
-        when(usuarioService.inactivarUsuario(id)).thenReturn(Optional.empty());
+    void inactivarUsuario_NotFound() throws Exception {
+        when(usuarioService.inactivarUsuario("user123")).thenReturn(Optional.empty());
 
-        ResponseEntity<UsuarioDTO> result = usuarioController.inactivarUsuario(id);
-
-        assertNotNull(result);
-        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+        mockMvc.perform(delete("/usuarios/user123"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    void testActualizarUsuarioFound() {
-        String id = "1";
+    void actualizarUsuario_Success() throws Exception {
         ActualizarUsuarioDTO actualizarDto = new ActualizarUsuarioDTO();
         actualizarDto.setTelefono("1234567890");
         actualizarDto.setDireccion("Calle Falsa 123");
 
-        UsuarioDTO usuarioActualizadoDTO = new UsuarioDTO();
-        usuarioActualizadoDTO.setId(id);
-        usuarioActualizadoDTO.setTelefono(actualizarDto.getTelefono());
-        usuarioActualizadoDTO.setDireccion(actualizarDto.getDireccion());
+        usuarioDTO.setTelefono("1234567890");
+        usuarioDTO.setDireccion("Calle Falsa 123");
 
-        when(usuarioService.actualizarUsuario(eq(id), any(ActualizarUsuarioDTO.class))).thenReturn(Optional.of(usuarioActualizadoDTO));
+        when(usuarioService.actualizarUsuario(eq("user123"), any(ActualizarUsuarioDTO.class)))
+                .thenReturn(Optional.of(usuarioDTO));
 
-        ResponseEntity<UsuarioDTO> result = usuarioController.actualizarUsuario(id, actualizarDto);
-
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertNotNull(result.getBody());
-        assertEquals("1234567890", result.getBody().getTelefono());
-        assertEquals("Calle Falsa 123", result.getBody().getDireccion());
+        mockMvc.perform(put("/usuarios/user123")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(actualizarDto)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.telefono").value("1234567890"))
+                .andExpect(jsonPath("$.direccion").value("Calle Falsa 123"));
     }
 
     @Test
-    void testActualizarUsuarioNotFound() {
-        String id = "1";
+    void actualizarUsuario_NotFound() throws Exception {
         ActualizarUsuarioDTO actualizarDto = new ActualizarUsuarioDTO();
-        when(usuarioService.actualizarUsuario(eq(id), any(ActualizarUsuarioDTO.class))).thenReturn(Optional.empty());
 
-        ResponseEntity<UsuarioDTO> result = usuarioController.actualizarUsuario(id, actualizarDto);
+        when(usuarioService.actualizarUsuario(eq("user123"), any(ActualizarUsuarioDTO.class)))
+                .thenReturn(Optional.empty());
 
-        assertNotNull(result);
-        assertEquals(HttpStatus.NOT_FOUND, result.getStatusCode());
+        mockMvc.perform(put("/usuarios/user123")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(actualizarDto)))
+                .andExpect(status().isNotFound());
     }
 }

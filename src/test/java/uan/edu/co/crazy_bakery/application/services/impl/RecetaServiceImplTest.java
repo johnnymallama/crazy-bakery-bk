@@ -2,17 +2,18 @@ package uan.edu.co.crazy_bakery.application.services.impl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import uan.edu.co.crazy_bakery.application.dto.requests.CrearRecetaDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.RecetaDTO;
 import uan.edu.co.crazy_bakery.application.dto.torta.TortaDTO;
 import uan.edu.co.crazy_bakery.application.mappers.RecetaMapper;
 import uan.edu.co.crazy_bakery.application.services.storage.StorageService;
-import uan.edu.co.crazy_bakery.domain.model.Receta;
-import uan.edu.co.crazy_bakery.domain.model.Torta;
 import uan.edu.co.crazy_bakery.domain.enums.TipoReceta;
+import uan.edu.co.crazy_bakery.domain.model.Receta;
 import uan.edu.co.crazy_bakery.domain.model.Tamano;
+import uan.edu.co.crazy_bakery.domain.model.Torta;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.RecetaRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.TortaRepository;
 
@@ -21,11 +22,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class RecetaServiceImplTest {
 
     @Mock
@@ -44,32 +48,25 @@ class RecetaServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
         recetaService = new RecetaServiceImpl(recetaRepository, tortaRepository, recetaMapper, storageService, 10, 10);
     }
 
     @Test
-    void testGetUltimasImagenes() {
-        // Arrange
+    void getUltimasImagenes_ShouldReturnListDeUrls() {
         List<String> expectedUrls = Arrays.asList(
             "http://example.com/img1.jpg",
             "http://example.com/img2.jpg"
         );
         when(recetaRepository.findUltimasImagenes()).thenReturn(expectedUrls);
 
-        // Act
         List<String> result = recetaService.getUltimasImagenes();
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals(expectedUrls, result);
+        assertThat(result).isNotNull().hasSize(2).isEqualTo(expectedUrls);
         verify(recetaRepository, times(1)).findUltimasImagenes();
     }
 
     @Test
-    void testCrearReceta() throws IOException {
-        // Arrange
+    void crearReceta_ShouldReturnRecetaDTOConUrlDeFirebase() throws IOException {
         long tortaId = 1L;
         String originalUrl = "http://example.com/cake.png";
         String firebaseUrl = "http://firebase-storage.com/receta-123.jpg";
@@ -81,19 +78,19 @@ class RecetaServiceImplTest {
         crearRecetaDTO.setPrompt("a delicious chocolate cake");
         crearRecetaDTO.setImagenUrl(originalUrl);
 
+        Tamano tamano = new Tamano();
+        tamano.setTiempo(1.5f);
         Torta torta = new Torta();
         torta.setId(tortaId);
         torta.setValor(50.0f);
-        Tamano tamano = new Tamano();
-        tamano.setTiempo(1.5f);
         torta.setTamano(tamano);
 
         Receta receta = new Receta();
         receta.setTorta(torta);
-        receta.setCantidad(crearRecetaDTO.getCantidad());
-        receta.setTipoReceta(crearRecetaDTO.getTipoReceta());
-        receta.setPrompt(crearRecetaDTO.getPrompt());
-        receta.setImagenUrl(originalUrl); // Initially has the original URL
+        receta.setCantidad(2);
+        receta.setTipoReceta(TipoReceta.TORTA);
+        receta.setPrompt("a delicious chocolate cake");
+        receta.setImagenUrl(originalUrl);
 
         Receta recetaGuardada = new Receta();
         recetaGuardada.setId(1L);
@@ -103,7 +100,7 @@ class RecetaServiceImplTest {
         recetaGuardada.setCostoOperativo(15.0f);
         recetaGuardada.setEstado(true);
         recetaGuardada.setPrompt("a delicious chocolate cake");
-        recetaGuardada.setImagenUrl(firebaseUrl); // The saved one has the new URL
+        recetaGuardada.setImagenUrl(firebaseUrl);
 
         RecetaDTO expectedDto = new RecetaDTO();
         expectedDto.setId(1L);
@@ -111,7 +108,7 @@ class RecetaServiceImplTest {
         expectedDto.setCantidad(2);
         expectedDto.setEstado(true);
         expectedDto.setPrompt("a delicious chocolate cake");
-        expectedDto.setImagenUrl(firebaseUrl); // The final DTO has the new URL
+        expectedDto.setImagenUrl(firebaseUrl);
 
         when(tortaRepository.findById(tortaId)).thenReturn(Optional.of(torta));
         when(recetaMapper.crearRecetaDTOToReceta(crearRecetaDTO, torta)).thenReturn(receta);
@@ -119,17 +116,15 @@ class RecetaServiceImplTest {
         when(recetaRepository.save(any(Receta.class))).thenReturn(recetaGuardada);
         when(recetaMapper.recetaToRecetaDTO(recetaGuardada)).thenReturn(expectedDto);
 
-        // Act
         RecetaDTO result = recetaService.crearReceta(crearRecetaDTO);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(expectedDto.getId(), result.getId());
-        assertEquals(expectedDto.getPrompt(), result.getPrompt());
-        assertEquals(firebaseUrl, result.getImagenUrl()); // Check for the firebase URL
-        assertTrue(result.isEstado());
-        assertEquals(15.0f, receta.getCostoManoObra());
-        assertEquals(15.0f, receta.getCostoOperativo());
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getPrompt()).isEqualTo("a delicious chocolate cake");
+        assertThat(result.getImagenUrl()).isEqualTo(firebaseUrl);
+        assertThat(result.isEstado()).isTrue();
+        assertThat(receta.getCostoManoObra()).isEqualTo(15.0f);
+        assertThat(receta.getCostoOperativo()).isEqualTo(15.0f);
 
         verify(tortaRepository, times(1)).findById(tortaId);
         verify(storageService, times(1)).uploadFileFromUrl(eq(originalUrl), anyString());
@@ -139,25 +134,50 @@ class RecetaServiceImplTest {
     }
 
     @Test
-    void testCrearReceta_TortaNotFound() {
-        // Arrange
-        long tortaId = 1L;
+    void crearReceta_ShouldThrowExceptionCuandoTortaNoExiste() {
         CrearRecetaDTO crearRecetaDTO = new CrearRecetaDTO();
-        crearRecetaDTO.setTortaId(tortaId);
+        crearRecetaDTO.setTortaId(1L);
 
-        when(tortaRepository.findById(tortaId)).thenReturn(Optional.empty());
+        when(tortaRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            recetaService.crearReceta(crearRecetaDTO);
-        });
-
-        assertEquals("Torta no encontrada con id: " + tortaId, exception.getMessage());
+        assertThatThrownBy(() -> recetaService.crearReceta(crearRecetaDTO))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Torta no encontrada con id: 1");
     }
 
     @Test
-    void testObtenerRecetaPorId() {
-        // Arrange
+    void crearReceta_ShouldThrowRuntimeExceptionCuandoStorageFalla() throws IOException {
+        long tortaId = 1L;
+        String originalUrl = "http://example.com/cake.png";
+
+        CrearRecetaDTO crearRecetaDTO = new CrearRecetaDTO();
+        crearRecetaDTO.setTortaId(tortaId);
+        crearRecetaDTO.setCantidad(1);
+        crearRecetaDTO.setTipoReceta(TipoReceta.TORTA);
+        crearRecetaDTO.setPrompt("cake test");
+        crearRecetaDTO.setImagenUrl(originalUrl);
+
+        Tamano tamano = new Tamano();
+        tamano.setTiempo(1.0f);
+        Torta torta = new Torta();
+        torta.setId(tortaId);
+        torta.setValor(50.0f);
+        torta.setTamano(tamano);
+
+        Receta receta = new Receta();
+        receta.setTorta(torta);
+
+        when(tortaRepository.findById(tortaId)).thenReturn(Optional.of(torta));
+        when(recetaMapper.crearRecetaDTOToReceta(crearRecetaDTO, torta)).thenReturn(receta);
+        when(storageService.uploadFileFromUrl(anyString(), anyString())).thenThrow(new IOException("Error de red"));
+
+        assertThatThrownBy(() -> recetaService.crearReceta(crearRecetaDTO))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Error al procesar la imagen de la receta");
+    }
+
+    @Test
+    void obtenerRecetaPorId_ShouldReturnRecetaDTO() {
         long recetaId = 1L;
         Receta receta = new Receta();
         receta.setId(recetaId);
@@ -172,65 +192,23 @@ class RecetaServiceImplTest {
         when(recetaRepository.findById(recetaId)).thenReturn(Optional.of(receta));
         when(recetaMapper.recetaToRecetaDTO(receta)).thenReturn(expectedDto);
 
-        // Act
         RecetaDTO result = recetaService.obtenerRecetaPorId(recetaId);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(expectedDto.getId(), result.getId());
-        assertEquals(expectedDto.getPrompt(), result.getPrompt());
-        assertEquals(expectedDto.getImagenUrl(), result.getImagenUrl());
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(recetaId);
+        assertThat(result.getPrompt()).isEqualTo("test prompt");
+        assertThat(result.getImagenUrl()).isEqualTo("test url");
 
         verify(recetaRepository, times(1)).findById(recetaId);
         verify(recetaMapper, times(1)).recetaToRecetaDTO(receta);
     }
 
     @Test
-    void testObtenerRecetaPorId_NotFound() {
-        // Arrange
-        long recetaId = 1L;
-        when(recetaRepository.findById(recetaId)).thenReturn(Optional.empty());
+    void obtenerRecetaPorId_ShouldThrowExceptionCuandoNoExiste() {
+        when(recetaRepository.findById(1L)).thenReturn(Optional.empty());
 
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            recetaService.obtenerRecetaPorId(recetaId);
-        });
-
-        assertEquals("Receta no encontrada con id: " + recetaId, exception.getMessage());
-    }
-
-    @Test
-    void testCrearReceta_cuandoStorageLanzaIOException_lanzaRuntimeException() throws IOException {
-        // Arrange
-        long tortaId = 1L;
-        String originalUrl = "http://example.com/cake.png";
-
-        CrearRecetaDTO crearRecetaDTO = new CrearRecetaDTO();
-        crearRecetaDTO.setTortaId(tortaId);
-        crearRecetaDTO.setCantidad(1);
-        crearRecetaDTO.setTipoReceta(TipoReceta.TORTA);
-        crearRecetaDTO.setPrompt("cake test");
-        crearRecetaDTO.setImagenUrl(originalUrl);
-
-        Torta torta = new Torta();
-        torta.setId(tortaId);
-        torta.setValor(50.0f);
-        Tamano tamano = new Tamano();
-        tamano.setTiempo(1.0f);
-        torta.setTamano(tamano);
-
-        Receta receta = new Receta();
-        receta.setTorta(torta);
-
-        when(tortaRepository.findById(tortaId)).thenReturn(Optional.of(torta));
-        when(recetaMapper.crearRecetaDTOToReceta(crearRecetaDTO, torta)).thenReturn(receta);
-        when(storageService.uploadFileFromUrl(anyString(), anyString())).thenThrow(new IOException("Error de red"));
-
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            recetaService.crearReceta(crearRecetaDTO);
-        });
-
-        assertEquals("Error al procesar la imagen de la receta", exception.getMessage());
+        assertThatThrownBy(() -> recetaService.obtenerRecetaPorId(1L))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("Receta no encontrada con id: 1");
     }
 }

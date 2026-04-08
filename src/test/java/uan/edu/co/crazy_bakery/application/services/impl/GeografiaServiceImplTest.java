@@ -1,20 +1,22 @@
 package uan.edu.co.crazy_bakery.application.services.impl;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
+import uan.edu.co.crazy_bakery.application.dto.responses.geografia.CiudadDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.geografia.DepartamentoDTO;
 import uan.edu.co.crazy_bakery.infrastructure.web.client.ColombiaApiClient;
 
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class GeografiaServiceImplTest {
 
     @Mock
@@ -23,38 +25,35 @@ class GeografiaServiceImplTest {
     @InjectMocks
     private GeografiaServiceImpl geografiaService;
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
-
     @Test
-    void getDepartamentos_shouldCallApiClientAndReturnData() {
-        // Arrange
+    void getDepartamentos_ShouldReturnListDeDepartamentos() {
         DepartamentoDTO departamento = new DepartamentoDTO();
         departamento.setId(1);
-        departamento.setName("Test Department");
-        List<DepartamentoDTO> expectedDepartamentos = Collections.singletonList(departamento);
+        departamento.setName("Amazonas");
+        List<DepartamentoDTO> expected = Collections.singletonList(departamento);
 
-        when(colombiaApiClient.getDepartamentos()).thenReturn(expectedDepartamentos);
+        when(colombiaApiClient.getDepartamentos()).thenReturn(expected);
 
-        // Act
-        List<DepartamentoDTO> actualDepartamentos = geografiaService.getDepartamentos();
+        List<DepartamentoDTO> result = geografiaService.getDepartamentos();
 
-        // Assert
-        assertEquals(expectedDepartamentos, actualDepartamentos);
+        assertThat(result).isNotNull().hasSize(1);
+        assertThat(result.get(0).getName()).isEqualTo("Amazonas");
         verify(colombiaApiClient).getDepartamentos();
     }
 
     @Test
-    void getCiudades_shouldCallApiClientAndReturnData() {
-        // Arrange
-        when(colombiaApiClient.getCiudades()).thenReturn(Collections.emptyList());
+    void getCiudades_ShouldReturnListDeCiudades() {
+        CiudadDTO ciudad = new CiudadDTO();
+        ciudad.setId(1);
+        ciudad.setName("Leticia");
+        List<CiudadDTO> expected = Collections.singletonList(ciudad);
 
-        // Act
-        geografiaService.getCiudades();
+        when(colombiaApiClient.getCiudades()).thenReturn(expected);
 
-        // Assert
+        List<CiudadDTO> result = geografiaService.getCiudades();
+
+        assertThat(result).isNotNull().hasSize(1);
+        assertThat(result.get(0).getName()).isEqualTo("Leticia");
         verify(colombiaApiClient).getCiudades();
     }
 }

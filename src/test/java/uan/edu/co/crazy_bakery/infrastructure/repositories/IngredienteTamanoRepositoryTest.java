@@ -12,11 +12,15 @@ import uan.edu.co.crazy_bakery.domain.model.IngredienteTamano;
 import uan.edu.co.crazy_bakery.domain.model.Tamano;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@TestPropertySource(properties = {"spring.flyway.enabled=false"})
+@TestPropertySource(properties = {
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.flyway.enabled=false"
+})
 class IngredienteTamanoRepositoryTest {
 
     @Autowired
@@ -26,6 +30,7 @@ class IngredienteTamanoRepositoryTest {
     private IngredienteTamanoRepository ingredienteTamanoRepository;
 
     private Tamano tamano;
+    private IngredienteTamano relacionActiva;
 
     @BeforeEach
     void setUp() {
@@ -38,22 +43,71 @@ class IngredienteTamanoRepositoryTest {
         tamano.setPorciones(8);
         entityManager.persist(tamano);
 
-        IngredienteTamano ingredienteTamano = new IngredienteTamano();
-        ingredienteTamano.setTamano(tamano);
-        ingredienteTamano.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
-        ingredienteTamano.setGramos(100.0f);
-        ingredienteTamano.setEstado(true);
-        entityManager.persist(ingredienteTamano);
+        relacionActiva = new IngredienteTamano();
+        relacionActiva.setTamano(tamano);
+        relacionActiva.setTipoIngrediente(TipoIngrediente.BIZCOCHO);
+        relacionActiva.setGramos(100.0f);
+        relacionActiva.setEstado(true);
+        entityManager.persist(relacionActiva);
+
+        IngredienteTamano relacionInactiva = new IngredienteTamano();
+        relacionInactiva.setTamano(tamano);
+        relacionInactiva.setTipoIngrediente(TipoIngrediente.RELLENO);
+        relacionInactiva.setGramos(50.0f);
+        relacionInactiva.setEstado(false);
+        entityManager.persist(relacionInactiva);
 
         entityManager.flush();
     }
 
     @Test
-    void testFindByTamanoIdAndEstadoTrue() {
-        // Act
+    void findByTamanoIdAndEstadoTrue_ShouldReturnSoloRelacionesActivas() {
         List<IngredienteTamano> result = ingredienteTamanoRepository.findByTamanoIdAndEstadoTrue(tamano.getId());
 
-        // Assert
         assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTipoIngrediente()).isEqualTo(TipoIngrediente.BIZCOCHO);
+        assertThat(result.get(0).isEstado()).isTrue();
+    }
+
+    @Test
+    void findByTamanoIdAndEstadoTrue_ShouldReturnListaVaciaCuandoNoHayActivas() {
+        Tamano otroTamano = new Tamano();
+        otroTamano.setNombre("Otro");
+        otroTamano.setTipoReceta(TipoReceta.CUPCAKE);
+        otroTamano.setEstado(true);
+        otroTamano.setDiametro(10);
+        otroTamano.setAlto(5);
+        otroTamano.setPorciones(4);
+        entityManager.persistAndFlush(otroTamano);
+
+        List<IngredienteTamano> result = ingredienteTamanoRepository.findByTamanoIdAndEstadoTrue(otroTamano.getId());
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void findByTamanoAndTipoIngredienteAndEstado_ShouldReturnRelacionCuandoExiste() {
+        Optional<IngredienteTamano> result = ingredienteTamanoRepository
+                .findByTamanoAndTipoIngredienteAndEstado(tamano, TipoIngrediente.BIZCOCHO, true);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(relacionActiva.getId());
+        assertThat(result.get().getGramos()).isEqualTo(100.0f);
+    }
+
+    @Test
+    void findByTamanoAndTipoIngredienteAndEstado_ShouldReturnEmptyParaRelacionInactiva() {
+        Optional<IngredienteTamano> result = ingredienteTamanoRepository
+                .findByTamanoAndTipoIngredienteAndEstado(tamano, TipoIngrediente.RELLENO, true);
+
+        assertThat(result).isNotPresent();
+    }
+
+    @Test
+    void findByTamanoAndTipoIngredienteAndEstado_ShouldReturnEmptyParaTipoInexistente() {
+        Optional<IngredienteTamano> result = ingredienteTamanoRepository
+                .findByTamanoAndTipoIngredienteAndEstado(tamano, TipoIngrediente.COBERTURA, true);
+
+        assertThat(result).isNotPresent();
     }
 }

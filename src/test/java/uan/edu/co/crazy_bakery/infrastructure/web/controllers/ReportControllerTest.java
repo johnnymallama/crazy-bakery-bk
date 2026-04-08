@@ -1,85 +1,76 @@
 package uan.edu.co.crazy_bakery.infrastructure.web.controllers;
 
 import com.itextpdf.text.DocumentException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import uan.edu.co.crazy_bakery.application.dto.responses.ReporteGeneradoDTO;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import uan.edu.co.crazy_bakery.application.services.ReportService;
+import uan.edu.co.crazy_bakery.infrastructure.web.security.FirebaseTokenFilter;
 
 import java.io.IOException;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(
+        controllers = ReportController.class,
+        excludeAutoConfiguration = {SecurityAutoConfiguration.class},
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = FirebaseTokenFilter.class)
+)
 class ReportControllerTest {
 
-    @Mock
-    private ReportService reportService;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @InjectMocks
-    private ReportController reportController;
+    @MockBean
+    private ReportService reportService;
 
     private static final String STORAGE_URL = "https://firebasestorage.googleapis.com/v0/b/bucket/o/reportes%2Freporte.pdf?alt=media";
 
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
-
     @Test
-    void testGenerateIngredientAnalysisReport_retorna200ConDto() throws IOException, DocumentException {
-        // Arrange
+    void generateIngredientAnalysisReport_Success() throws Exception {
         when(reportService.generateIngredientAnalysisReport()).thenReturn(STORAGE_URL);
 
-        // Act
-        ResponseEntity<ReporteGeneradoDTO> response = reportController.generateIngredientAnalysisReport();
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Análisis de Ingredientes", response.getBody().getNombre_reporte());
-        assertNotNull(response.getBody().getFecha_reporte());
-        assertEquals(STORAGE_URL, response.getBody().getUrl());
+        mockMvc.perform(post("/generate-reports/ingredient-analysis"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.nombre_reporte").value("Análisis de Ingredientes"))
+                .andExpect(jsonPath("$.fecha_reporte").isNotEmpty())
+                .andExpect(jsonPath("$.url").value(STORAGE_URL));
     }
 
     @Test
-    void testGenerateIngredientStrategyReport_retorna200ConDto() throws IOException, DocumentException {
-        // Arrange
+    void generateIngredientStrategyReport_Success() throws Exception {
         when(reportService.generateIngredientStrategyReport()).thenReturn(STORAGE_URL);
 
-        // Act
-        ResponseEntity<ReporteGeneradoDTO> response = reportController.generateIngredientStrategyReport();
-
-        // Assert
-        assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Estrategia de Ingredientes", response.getBody().getNombre_reporte());
-        assertNotNull(response.getBody().getFecha_reporte());
-        assertEquals(STORAGE_URL, response.getBody().getUrl());
+        mockMvc.perform(post("/generate-reports/ingredient-strategy"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.nombre_reporte").value("Estrategia de Ingredientes"))
+                .andExpect(jsonPath("$.fecha_reporte").isNotEmpty())
+                .andExpect(jsonPath("$.url").value(STORAGE_URL));
     }
 
     @Test
-    void testGenerateIngredientAnalysisReport_lanzaIOException() throws IOException, DocumentException {
-        // Arrange
+    void generateIngredientAnalysisReport_ThrowsIOException() throws Exception {
         when(reportService.generateIngredientAnalysisReport()).thenThrow(new IOException("Error de lectura"));
 
-        // Act & Assert
-        assertThrows(IOException.class, () -> reportController.generateIngredientAnalysisReport());
+        mockMvc.perform(post("/generate-reports/ingredient-analysis"))
+                .andExpect(status().isInternalServerError());
     }
 
     @Test
-    void testGenerateIngredientStrategyReport_lanzaIOException() throws IOException, DocumentException {
-        // Arrange
+    void generateIngredientStrategyReport_ThrowsIOException() throws Exception {
         when(reportService.generateIngredientStrategyReport()).thenThrow(new IOException("Error de lectura"));
 
-        // Act & Assert
-        assertThrows(IOException.class, () -> reportController.generateIngredientStrategyReport());
+        mockMvc.perform(post("/generate-reports/ingredient-strategy"))
+                .andExpect(status().isInternalServerError());
     }
 }

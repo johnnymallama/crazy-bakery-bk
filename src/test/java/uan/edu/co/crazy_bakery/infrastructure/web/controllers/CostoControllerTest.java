@@ -1,38 +1,49 @@
-
 package uan.edu.co.crazy_bakery.infrastructure.web.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import uan.edu.co.crazy_bakery.application.dto.requests.CalcularCostoRequestDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.CostoPedidoResponseDTO;
 import uan.edu.co.crazy_bakery.application.services.CostoService;
 import uan.edu.co.crazy_bakery.domain.enums.TipoReceta;
+import uan.edu.co.crazy_bakery.infrastructure.web.security.FirebaseTokenFilter;
 
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(
+        controllers = CostoController.class,
+        excludeAutoConfiguration = {SecurityAutoConfiguration.class},
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = FirebaseTokenFilter.class)
+)
 class CostoControllerTest {
 
-    @Mock
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
     private CostoService costoService;
 
-    @InjectMocks
-    private CostoController costoController;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private CalcularCostoRequestDTO requestDTO;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
         requestDTO = new CalcularCostoRequestDTO();
         requestDTO.setTipoReceta(TipoReceta.TORTA);
         requestDTO.setTamanoId(1L);
@@ -41,18 +52,15 @@ class CostoControllerTest {
     }
 
     @Test
-    void testCalcularCosto() {
-        // Arrange
+    void calcularCosto_Success() throws Exception {
         CostoPedidoResponseDTO responseDTO = new CostoPedidoResponseDTO(579600);
         when(costoService.calcularCostoPedido(any(CalcularCostoRequestDTO.class))).thenReturn(responseDTO);
 
-        // Act
-        ResponseEntity<CostoPedidoResponseDTO> result = costoController.calcularCosto(requestDTO);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertNotNull(result.getBody());
-        assertEquals(579600, result.getBody().getValorTotalPedido());
+        mockMvc.perform(post("/costo/calcular")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDTO)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.valorTotalPedido").value(579600));
     }
 }
