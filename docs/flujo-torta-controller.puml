@@ -1,0 +1,44 @@
+@startuml TortaController
+title Flujo - TortaController\n/torta
+
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam ActivityBorderColor #555555
+skinparam ActivityBackgroundColor #FAD7A0
+skinparam NoteBackgroundColor #FFF9C4
+skinparam NoteBorderColor #F9A825
+
+|Cliente|
+start
+:Solicitud HTTP;
+
+|TortaController|
+if (¿Qué endpoint?) then (POST /)
+  :crearTorta(CrearTortaDTO);
+  |TortaService|
+  :Combina bizcocho + relleno + cubertura;
+  :Persiste Torta;
+  |TortaController|
+  :201 CREATED — TortaDTO;
+
+else (GET /)
+  :obtenerTodasLasTortas();
+  |TortaService|
+  :Consulta catálogo completo;
+  |TortaController|
+  :200 OK — List<TortaDTO>;
+endif
+
+|Cliente|
+:Respuesta HTTP;
+stop
+
+legend right
+  | Color | Significado |
+  |<#FAD7A0>| Lógica de controlador |
+  |<#FFF9C4>| Decisión de flujo |
+  Base URL: /torta
+  Servicio: TortaService
+  Una Torta combina: Bizcocho + Relleno + Cubertura
+endlegend
+@enduml

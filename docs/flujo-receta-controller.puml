@@ -1,0 +1,58 @@
+@startuml RecetaController
+title Flujo - RecetaController\n/receta
+
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam ActivityBorderColor #555555
+skinparam ActivityBackgroundColor #D5F5E3
+skinparam NoteBackgroundColor #FFF9C4
+skinparam NoteBorderColor #F9A825
+
+|Cliente|
+start
+:Solicitud HTTP;
+
+|RecetaController|
+if (¿Qué endpoint?) then (GET /ultimas-imagenes)
+  :getUltimasImagenes();
+  |RecetaService|
+  :Consulta URLs de imágenes recientes;
+  |RecetaController|
+  :200 OK — List<String> (URLs);
+
+elseif (POST /) then (POST)
+  :crearReceta(CrearRecetaDTO);
+  |RecetaService|
+  :Calcula costos de ingredientes;
+  :Llama DALL-E 3 → genera imagen;
+  :Sube imagen a Firebase Storage;
+  :Persiste Receta con URL;
+  |RecetaController|
+  :201 CREATED — RecetaDTO;
+
+else (GET /{id})
+  :obtenerRecetaPorId(id);
+  |RecetaService|
+  :Busca receta por ID;
+  |RecetaController|
+  if (¿Encontrada?) then (sí)
+    :200 OK — RecetaDTO;
+  else (RuntimeException)
+    :404 NOT FOUND;
+  endif
+endif
+
+|Cliente|
+:Respuesta HTTP;
+stop
+
+legend right
+  | Color | Significado |
+  |<#D5F5E3>| Lógica de controlador |
+  |<#FFF9C4>| Decisión de flujo |
+  Base URL: /receta
+  Servicio: RecetaService
+  Integración: DALL-E 3 + Firebase Storage
+  Costos calculados desde vista ingredientes_costos
+endlegend
+@enduml

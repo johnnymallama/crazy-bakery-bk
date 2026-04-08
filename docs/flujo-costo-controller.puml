@@ -1,0 +1,45 @@
+@startuml CostoController
+title Flujo - CostoController\n/costo
+
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam ActivityBorderColor #555555
+skinparam ActivityBackgroundColor #AED6F1
+skinparam NoteBackgroundColor #FADBD8
+skinparam NoteBorderColor #E74C3C
+
+|Cliente|
+start
+:POST /costo/calcular\n(CalcularCostoRequestDTO);
+
+|CostoController|
+if (¿Body válido?) then (no — @Valid falla)
+  :400 BAD REQUEST;
+else (sí)
+  :calcularCostoPedido(requestDTO);
+  |CostoService|
+  :Agrega costos de ingredientes\n(vista ingredientes_costos);
+  :Suma costo mano de obra (LABOR_COST);
+  :Suma costo operativo (OPERATING_COST);
+  :Aplica porcentaje de beneficio\n(BENEFIT_PERCENTAGE);
+  :Retorna CostoPedidoResponseDTO;
+  |CostoController|
+  :200 OK — CostoPedidoResponseDTO;
+endif
+
+|Cliente|
+:Respuesta HTTP;
+stop
+
+legend right
+  | Color | Significado |
+  |<#AED6F1>| Lógica de controlador |
+  |<#FADBD8>| Error de validación |
+  Base URL: /costo
+  Servicio: CostoService
+  Variables de entorno usadas:
+    LABOR_COST, OPERATING_COST,
+    BENEFIT_PERCENTAGE
+  Fuente de costos: vista ingredientes_costos
+endlegend
+@enduml

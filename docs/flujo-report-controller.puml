@@ -1,0 +1,57 @@
+@startuml ReportController
+title Flujo - ReportController\n/generate-reports
+
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam ActivityBorderColor #555555
+skinparam ActivityBackgroundColor #F9E79F
+skinparam NoteBackgroundColor #FADBD8
+skinparam NoteBorderColor #E74C3C
+
+|Cliente (ADMIN)|
+start
+:Solicitud HTTP POST;
+
+|ReportController|
+if (¿Qué endpoint?) then (POST /ingredient-analysis)
+  :generateIngredientAnalysisReport();
+  |ReportService|
+  :Genera PDF de análisis de ingredientes;
+  :Sube PDF a Firebase Storage;
+  :Retorna URL pública;
+  |ReportController|
+  if (¿Éxito?) then (sí)
+    :200 OK — ReporteGeneradoDTO\n(nombre, fecha, url);
+  else (IOException / DocumentException)
+    :500 INTERNAL SERVER ERROR;
+  endif
+
+else (POST /ingredient-strategy)
+  :generateIngredientStrategyReport();
+  |ReportService|
+  :Genera PDF de estrategia;
+  :Sube PDF a Firebase Storage;
+  :Retorna URL pública;
+  |ReportController|
+  if (¿Éxito?) then (sí)
+    :200 OK — ReporteGeneradoDTO\n(nombre, fecha, url);
+  else (IOException / DocumentException)
+    :500 INTERNAL SERVER ERROR;
+  endif
+endif
+
+|Cliente (ADMIN)|
+:Respuesta HTTP;
+stop
+
+legend right
+  | Color | Significado |
+  |<#F9E79F>| Lógica de controlador |
+  |<#FADBD8>| Error / excepción |
+  Base URL: /generate-reports
+  Servicio: ReportService
+  Requiere rol: ADMIN
+  Salida: PDF en Firebase Storage
+  DTO retornado: nombre + fecha + URL
+endlegend
+@enduml

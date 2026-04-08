@@ -1,0 +1,83 @@
+@startuml UsuarioController
+title Flujo - UsuarioController\n/usuarios
+
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam ActivityBorderColor #555555
+skinparam ActivityBackgroundColor #A8D8EA
+skinparam NoteBackgroundColor #FFF9C4
+skinparam NoteBorderColor #F9A825
+
+|Cliente|
+start
+:Solicitud HTTP;
+
+|UsuarioController|
+if (¿Qué endpoint?) then (POST /)
+  :crearUsuario(CrearUsuarioDTO);
+  |UsuarioService|
+  :Sincroniza con Firebase Authentication;
+  :Persiste usuario en BD;
+  |UsuarioController|
+  :201 CREATED — UsuarioDTO;
+
+elseif (GET /) then (GET lista)
+  :getAllUsuarios();
+  |UsuarioService|
+  :Consulta todos los usuarios;
+  |UsuarioController|
+  :200 OK — List<UsuarioDTO>;
+
+elseif (GET /{id}) then (GET por ID)
+  :getUsuario(id);
+  |UsuarioService|
+  :Busca por UID Firebase;
+  |UsuarioController|
+  if (¿Encontrado?) then (no)
+    :404 NOT FOUND;
+  elseif (¿Activo?) then (no)
+    :204 NO CONTENT;
+  else (sí activo)
+    :UsuarioMapper → UsuarioDTO;
+    :200 OK — UsuarioDTO;
+  endif
+
+elseif (DELETE /{id}) then (DELETE)
+  :inactivarUsuario(id);
+  |UsuarioService|
+  :Baja lógica (estado = false);
+  |UsuarioController|
+  if (¿Encontrado?) then (sí)
+    :200 OK — UsuarioDTO;
+  else (no)
+    :404 NOT FOUND;
+  endif
+
+else (PUT /{id})
+  :actualizarUsuario(id, ActualizarUsuarioDTO);
+  |UsuarioService|
+  :Actualiza contacto y ubicación;
+  |UsuarioController|
+  if (¿Encontrado?) then (sí)
+    :200 OK — UsuarioDTO;
+  else (no)
+    :404 NOT FOUND;
+  endif
+endif
+
+|Cliente|
+:Respuesta HTTP;
+stop
+
+legend right
+  | Color | Significado |
+  |<#A8D8EA>| Lógica de controlador |
+  |<#FFF9C4>| Decisión de flujo |
+  Base URL: /usuarios
+  Servicio: UsuarioService
+  ID = UID de Firebase Authentication
+  DELETE = baja lógica (no física)
+  204 = usuario existe pero está inactivo
+  Mapper: UsuarioMapper (MapStruct)
+endlegend
+@enduml

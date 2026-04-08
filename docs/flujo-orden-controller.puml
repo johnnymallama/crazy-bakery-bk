@@ -1,0 +1,111 @@
+@startuml OrdenController
+title Flujo - OrdenController\n/orden
+
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam ActivityBorderColor #555555
+skinparam ActivityBackgroundColor #C8E6C9
+skinparam NoteBackgroundColor #FFF9C4
+skinparam NoteBorderColor #F9A825
+
+|Cliente|
+start
+:Solicitud HTTP;
+
+|OrdenController|
+if (¿Qué endpoint?) then (POST /)
+  :createOrden(CrearOrdenDTO);
+  |OrdenService|
+  :Crea orden con estado PENDIENTE;
+  |OrdenController|
+  :201 CREATED — OrdenDTO;
+
+elseif (GET /) then (GET lista)
+  :getAllOrdenes();
+  |OrdenService|
+  :Consulta órdenes (filtro HISTORY_MONTH)\nordenadas por fecha desc;
+  |OrdenController|
+  :200 OK — List<OrdenDTO>;
+
+elseif (GET /{id}) then (GET por ID)
+  :getOrdenById(id);
+  |OrdenService|
+  :Busca orden completa;
+  |OrdenController|
+  if (¿Encontrada?) then (sí)
+    :200 OK — OrdenDTO;
+  else (no)
+    :404 NOT FOUND;
+  endif
+
+elseif (GET /usuario/{id}) then (GET por usuario)
+  :getOrdenesByUsuario(usuarioId);
+  |OrdenService|
+  :Filtra por UID Firebase;
+  |OrdenController|
+  :200 OK — List<OrdenDTO>;
+
+elseif (GET /estado/{estado}) then (GET por estado)
+  :getOrdenesByEstado(estado);
+  |OrdenService|
+  :Filtra por EstadoOrden;
+  |OrdenController|
+  :200 OK — List<OrdenDTO>;
+
+elseif (GET /fecha) then (GET por fechas)
+  :getOrdenesByFecha(fechaInicio, fechaFin);
+  |OrdenService|
+  :Filtra por rango de fechas;
+  |OrdenController|
+  :200 OK — List<OrdenDTO>;
+
+elseif (PATCH /{id}/estado) then (PATCH estado)
+  :cambiarEstadoOrden(id, CambiarEstadoOrdenDTO);
+  |OrdenService|
+  :Valida transición de estado\nPENDIENTE → EN_PROCESO → ENTREGADO / CANCELADO;
+  |OrdenController|
+  if (¿Válido y encontrado?) then (sí)
+    :200 OK — OrdenDTO;
+  else (no)
+    :400 / 404;
+  endif
+
+elseif (PATCH /{id}/nota) then (PATCH nota)
+  :agregarNotaOrden(id, AgregarNotaOrdenDTO);
+  |OrdenService|
+  :Adjunta nota interna a la orden;
+  |OrdenController|
+  if (¿Encontrada?) then (sí)
+    :200 OK — OrdenDTO;
+  else (no)
+    :404 NOT FOUND;
+  endif
+
+else (PATCH /{id}/receta)
+  :agregarRecetaOrden(id, AgregarRecetaOrdenDTO);
+  |OrdenService|
+  :Vincula receta a la orden;
+  |OrdenController|
+  if (¿Encontrada?) then (sí)
+    :200 OK — OrdenDTO;
+  else (no)
+    :404 NOT FOUND;
+  endif
+endif
+
+|Cliente|
+:Respuesta HTTP;
+stop
+
+legend right
+  | Color | Significado |
+  |<#C8E6C9>| Lógica de controlador |
+  |<#FFF9C4>| Decisión de flujo |
+  Base URL: /orden
+  Servicio: OrdenService
+  Estados: PENDIENTE → EN_PROCESO → ENTREGADO | CANCELADO
+  HISTORY_MONTH filtra antigüedad del historial
+  usuarioId = UID Firebase
+  Fecha formato: yyyy-MM-dd (ISO)
+endlegend
+@enduml

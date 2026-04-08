@@ -1,0 +1,59 @@
+@startuml ImageGenerationController
+title Flujo - ImageGenerationController\n/generate-image
+
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam ActivityBorderColor #555555
+skinparam ActivityBackgroundColor #F5CBA7
+skinparam NoteBackgroundColor #FADBD8
+skinparam NoteBorderColor #E74C3C
+
+|Cliente|
+start
+:Solicitud HTTP POST;
+
+|ImageGenerationController|
+if (¿Qué endpoint?) then (POST /)
+  if (¿Prompt válido?) then (no)
+    :400 BAD REQUEST;
+  else (sí)
+    :generateImage(prompt);
+    |ImageGenerationService|
+    :Llama DALL-E 3 con prompt libre;
+    :Descarga imagen generada;
+    :Sube a Firebase Storage;
+    :Retorna URL pública;
+    |ImageGenerationController|
+    :200 OK — GeneratedImageResponseDTO\n(prompt, imageUrl);
+  endif
+
+else (POST /custom-cake)
+  if (¿tipoReceta vacío o null?) then (sí)
+    :400 BAD REQUEST;
+  else (no)
+    :generateCustomCakeImage(requestDTO);
+    |ImageGenerationService|
+    :Construye prompt según tipo de receta\ny atributos (bizcocho, relleno, etc.);
+    :Llama DALL-E 3;
+    :Sube imagen a Firebase Storage;
+    :Retorna GeneratedImageResponseDTO;
+    |ImageGenerationController|
+    :200 OK — GeneratedImageResponseDTO;
+  endif
+endif
+
+|Cliente|
+:Respuesta HTTP;
+stop
+
+legend right
+  | Color | Significado |
+  |<#F5CBA7>| Lógica de controlador |
+  |<#FADBD8>| Error / validación |
+  Base URL: /generate-image
+  Servicio: ImageGenerationService
+  IA: OpenAI DALL-E 3
+  Almacenamiento: Firebase Storage
+  /custom-cake usa atributos de la torta
+endlegend
+@enduml

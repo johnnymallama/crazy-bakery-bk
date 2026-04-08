@@ -1,0 +1,43 @@
+@startuml GeografiaController
+title Flujo - GeografiaController\n/geografia
+
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam ActivityBorderColor #555555
+skinparam ActivityBackgroundColor #D2B4DE
+skinparam NoteBackgroundColor #FFF9C4
+skinparam NoteBorderColor #F9A825
+
+|Cliente|
+start
+:Solicitud HTTP;
+
+|GeografiaController|
+if (¿Qué endpoint?) then (GET /departamentos)
+  :getDepartamentos();
+  |GeografiaService|
+  :Consulta todos los departamentos;
+  |GeografiaController|
+  :200 OK — List<DepartamentoDTO>;
+
+else (GET /ciudades)
+  :getCiudades();
+  |GeografiaService|
+  :Consulta todas las ciudades;
+  |GeografiaController|
+  :200 OK — List<CiudadDTO>;
+endif
+
+|Cliente|
+:Respuesta HTTP;
+stop
+
+legend right
+  | Color | Significado |
+  |<#D2B4DE>| Lógica de controlador |
+  |<#FFF9C4>| Decisión de flujo |
+  Base URL: /geografia
+  Servicio: GeografiaService
+  Solo lectura — datos de Colombia
+endlegend
+@enduml

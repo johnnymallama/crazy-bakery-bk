@@ -1,0 +1,54 @@
+@startuml IngredienteTamanoController
+title Flujo - IngredienteTamanoController\n/ingrediente-tamano
+
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam ActivityBorderColor #555555
+skinparam ActivityBackgroundColor #D6EAF8
+skinparam NoteBackgroundColor #FFF9C4
+skinparam NoteBorderColor #F9A825
+
+|Cliente|
+start
+:Solicitud HTTP;
+
+|IngredienteTamanoController|
+if (¿Qué endpoint?) then (GET /{tamanoId})
+  :consultarPorTamano(tamanoId);
+  |IngredienteTamanoService|
+  :Busca relaciones por tamaño;
+  |IngredienteTamanoController|
+  :200 OK — List<IngredienteTamanoDTO>;
+
+elseif (POST /) then (POST)
+  :crearRelacion(CrearIngredienteTamanoDTO);
+  |IngredienteTamanoService|
+  :Persiste relación ingrediente-tamaño;
+  |IngredienteTamanoController|
+  :201 CREATED — IngredienteTamanoDTO;
+
+else (DELETE /{id})
+  :inactivarRelacion(id);
+  |IngredienteTamanoService|
+  :Baja lógica de la relación;
+  |IngredienteTamanoController|
+  if (¿Encontrada?) then (sí)
+    :200 OK;
+  else (no)
+    :404 NOT FOUND;
+  endif
+endif
+
+|Cliente|
+:Respuesta HTTP;
+stop
+
+legend right
+  | Color | Significado |
+  |<#D6EAF8>| Lógica de controlador |
+  |<#FFF9C4>| Decisión de flujo |
+  Base URL: /ingrediente-tamano
+  Servicio: IngredienteTamanoService
+  Baja lógica (no elimina físicamente)
+endlegend
+@enduml

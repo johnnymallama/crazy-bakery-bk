@@ -1,0 +1,94 @@
+@startuml IngredienteController
+title Flujo - IngredienteController\n/ingredientes
+
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam ActivityBorderColor #555555
+skinparam ActivityBackgroundColor #A9DFBF
+skinparam NoteBackgroundColor #FFF9C4
+skinparam NoteBorderColor #F9A825
+
+|Cliente|
+start
+:Solicitud HTTP;
+
+|IngredienteController|
+if (¿Qué endpoint?) then (POST /)
+  :createIngrediente(CrearIngredienteDTO);
+  |IngredienteService|
+  :Persiste nuevo ingrediente;
+  |IngredienteController|
+  :201 CREATED — IngredienteDTO;
+
+elseif (GET /) then (GET lista)
+  :getAllIngredientes();
+  |IngredienteService|
+  :Consulta ingredientes activos;
+  |IngredienteController|
+  :200 OK — List<IngredienteDTO>;
+
+elseif (GET /{id}) then (GET por ID)
+  :getIngrediente(id);
+  |IngredienteService|
+  :Busca ingrediente por ID;
+  |IngredienteController|
+  if (¿Existe?) then (no)
+    :404 NOT FOUND;
+  elseif (¿Activo?) then (no)
+    :204 NO CONTENT;
+  else (sí activo)
+    :200 OK — IngredienteDTO;
+  endif
+
+elseif (PUT /{id}) then (PUT)
+  :updateIngrediente(id, DTO);
+  |IngredienteService|
+  :Actualiza datos del ingrediente;
+  |IngredienteController|
+  if (¿Encontrado?) then (sí)
+    :200 OK — IngredienteDTO;
+  else (no)
+    :404 NOT FOUND;
+  endif
+
+elseif (DELETE /{id}) then (DELETE)
+  :deactivateIngrediente(id);
+  |IngredienteService|
+  :Baja lógica (estado = false);
+  |IngredienteController|
+  if (¿Encontrado?) then (sí)
+    :200 OK — IngredienteDTO;
+  else (no)
+    :404 NOT FOUND;
+  endif
+
+elseif (GET /tipo/{tipo}) then (GET por tipo)
+  :findByTipoIngrediente(tipo);
+  |IngredienteService|
+  :Filtra activos por tipo;
+  |IngredienteController|
+  :200 OK — List<IngredienteDTO>;
+
+else (GET /search)
+  :searchIngredientes(tipoReceta, tamanoId, tipo);
+  |IngredienteService|
+  :Filtra por receta + tamaño + tipo;
+  |IngredienteController|
+  :200 OK — List<IngredienteDTO>;
+endif
+
+|Cliente|
+:Respuesta HTTP;
+stop
+
+legend right
+  | Color | Significado |
+  |<#A9DFBF>| Lógica de controlador |
+  |<#FFF9C4>| Decisión de flujo |
+  Base URL: /ingredientes
+  Servicio: IngredienteService
+  Tipos: BIZCOCHO, RELLENO, CUBERTURA
+  DELETE = baja lógica (no física)
+  204 = ingrediente existe pero está inactivo
+endlegend
+@enduml

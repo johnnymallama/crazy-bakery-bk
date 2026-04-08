@@ -1,0 +1,85 @@
+@startuml TamanoController
+title Flujo - TamanoController\n/tamanos
+
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam ActivityBorderColor #555555
+skinparam ActivityBackgroundColor #D5D8DC
+skinparam NoteBackgroundColor #FFF9C4
+skinparam NoteBorderColor #F9A825
+
+|Cliente|
+start
+:Solicitud HTTP;
+
+|TamanoController|
+if (¿Qué endpoint?) then (POST /)
+  :crearTamano(CrearTamanoDTO);
+  |TamanoService|
+  :Persiste tamaño con dimensiones y gramos;
+  |TamanoController|
+  :201 CREATED — TamanoDTO;
+
+elseif (GET /{id}) then (GET por ID)
+  :obtenerTamanoPorId(id);
+  |TamanoService|
+  :Busca tamaño por ID;
+  |TamanoController|
+  if (¿Encontrado?) then (sí)
+    :200 OK — TamanoDTO;
+  else (no)
+    :404 NOT FOUND;
+  endif
+
+elseif (GET /) then (GET lista)
+  :obtenerTodosLosTamanos();
+  |TamanoService|
+  :Consulta todos los tamaños;
+  |TamanoController|
+  :200 OK — List<TamanoDTO>;
+
+elseif (PUT /{id}) then (PUT)
+  :actualizarTamano(id, ActualizarTamanoDTO);
+  |TamanoService|
+  :Actualiza dimensiones y tiempo;
+  |TamanoController|
+  if (¿Encontrado?) then (sí)
+    :200 OK — TamanoDTO;
+  else (no)
+    :404 NOT FOUND;
+  endif
+
+elseif (DELETE /{id}) then (DELETE)
+  :eliminarTamano(id);
+  |TamanoService|
+  :Eliminación permanente;
+  |TamanoController|
+  if (¿Encontrado?) then (sí)
+    :204 NO CONTENT;
+  else (no)
+    :404 NOT FOUND;
+  endif
+
+else (GET /tipo-receta/{tipo})
+  :obtenerTamanosPorTipoReceta(tipoReceta);
+  |TamanoService|
+  :Filtra tamaños por tipo de receta;
+  |TamanoController|
+  :200 OK — List<TamanoDTO>;
+endif
+
+|Cliente|
+:Respuesta HTTP;
+stop
+
+legend right
+  | Color | Significado |
+  |<#D5D8DC>| Lógica de controlador |
+  |<#FFF9C4>| Decisión de flujo |
+  Base URL: /tamanos
+  Servicio: TamanoService
+  DELETE = eliminación FISICA (permanente)
+  TipoReceta: TORTA (u otros)
+  Tamaño incluye: dimensiones, porciones, gramos
+endlegend
+@enduml
