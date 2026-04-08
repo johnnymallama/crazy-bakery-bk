@@ -44,7 +44,7 @@ public class OrdenController {
         return ResponseEntity.ok(ordenService.getAllOrdenes());
     }
 
-    @Operation(summary = "Obtener orden por ID")
+    @Operation(summary = "Obtener orden por ID", description = "Retorna el detalle completo de una orden dado su ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Orden encontrada"),
         @ApiResponse(responseCode = "404", description = "Orden no encontrada")

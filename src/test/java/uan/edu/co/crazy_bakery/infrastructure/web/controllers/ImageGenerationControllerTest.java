@@ -66,7 +66,7 @@ class ImageGenerationControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Prompt cannot be empty"));
+                .andExpect(jsonPath("$.error").value("Validation Error"));
     }
 
     @Test

@@ -35,7 +35,7 @@ public class UsuarioController {
         return new ResponseEntity<>(nuevoUsuario, HttpStatus.CREATED);
     }
 
-    @Operation(summary = "Listar todos los usuarios")
+    @Operation(summary = "Listar todos los usuarios", description = "Retorna todos los usuarios registrados en la plataforma")
     @ApiResponse(responseCode = "200", description = "Lista de usuarios")
     @GetMapping
     public ResponseEntity<List<UsuarioDTO>> getAllUsuarios() {
@@ -75,7 +75,7 @@ public class UsuarioController {
                 .orElse(new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    @Operation(summary = "Actualizar usuario")
+    @Operation(summary = "Actualizar usuario", description = "Actualiza los datos de contacto y ubicación del usuario")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Usuario actualizado"),
         @ApiResponse(responseCode = "404", description = "Usuario no encontrado")

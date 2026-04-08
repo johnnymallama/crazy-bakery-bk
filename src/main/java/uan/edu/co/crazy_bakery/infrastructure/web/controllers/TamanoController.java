@@ -35,7 +35,7 @@ public class TamanoController {
         return new ResponseEntity<>(tamanoCreado, HttpStatus.CREATED);
     }
 
-    @Operation(summary = "Obtener tamaño por ID")
+    @Operation(summary = "Obtener tamaño por ID", description = "Retorna los datos de un tamaño de torta dado su ID")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Tamaño encontrado"),
         @ApiResponse(responseCode = "404", description = "Tamaño no encontrado")
@@ -46,7 +46,7 @@ public class TamanoController {
         return ResponseEntity.ok(tamano);
     }
 
-    @Operation(summary = "Listar todos los tamaños")
+    @Operation(summary = "Listar todos los tamaños", description = "Retorna todos los tamaños de torta registrados en el sistema")
     @ApiResponse(responseCode = "200", description = "Lista de tamaños disponibles")
     @GetMapping
     public ResponseEntity<List<TamanoDTO>> obtenerTodosLosTamanos() {
@@ -54,7 +54,7 @@ public class TamanoController {
         return ResponseEntity.ok(tamanos);
     }
 
-    @Operation(summary = "Actualizar tamaño")
+    @Operation(summary = "Actualizar tamaño", description = "Actualiza las dimensiones, porciones y tiempo de preparación de un tamaño existente")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Tamaño actualizado"),
         @ApiResponse(responseCode = "404", description = "Tamaño no encontrado")

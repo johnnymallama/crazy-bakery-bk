@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uan.edu.co.crazy_bakery.application.dto.requests.CustomCakeImageRequestDTO;
+import uan.edu.co.crazy_bakery.application.dto.requests.GenerarImagenRequestDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.GeneratedImageResponseDTO;
 import uan.edu.co.crazy_bakery.application.services.ImageGenerationService;
 
-import java.util.Map;
 
 @Tag(name = "Generación de imágenes", description = "Generación de imágenes de tortas con IA (DALL-E 3)")
 @RestController
@@ -34,14 +34,9 @@ public class ImageGenerationController {
         @ApiResponse(responseCode = "400", description = "El prompt está vacío o es inválido")
     })
     @PostMapping
-    public ResponseEntity<?> generateImage(@RequestBody Map<String, String> request) {
-        String prompt = request.get("prompt");
-        if (prompt == null || prompt.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "Prompt cannot be empty"));
-        }
-
-        String imageUrl = imageGenerationService.generateImage(prompt);
-        return ResponseEntity.ok(Map.of("imageUrl", imageUrl));
+    public ResponseEntity<GeneratedImageResponseDTO> generateImage(@Valid @RequestBody GenerarImagenRequestDTO request) {
+        String imageUrl = imageGenerationService.generateImage(request.getPrompt());
+        return ResponseEntity.ok(new GeneratedImageResponseDTO(request.getPrompt(), imageUrl));
     }
 
     @Operation(summary = "Generar imagen de torta personalizada", description = "Genera una imagen de torta personalizada según el tipo de receta y atributos proporcionados")

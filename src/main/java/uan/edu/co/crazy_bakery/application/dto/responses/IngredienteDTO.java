@@ -1,13 +1,28 @@
 package uan.edu.co.crazy_bakery.application.dto.responses;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import uan.edu.co.crazy_bakery.domain.enums.TipoIngrediente;
 
+@Schema(description = "Representación de un ingrediente")
+
 public class IngredienteDTO {
+
+    @Schema(description = "ID único del ingrediente", example = "1")
     private Long id;
+
+    @Schema(description = "Nombre comercial del ingrediente", example = "Harina de trigo")
     private String nombre;
+
+    @Schema(description = "Descripción de la composición o características", example = "Harina de trigo 000 sin gluten")
     private String composicion;
+
+    @Schema(description = "Clasificación del ingrediente según su uso (BIZCOCHO, RELLENO, CUBERTURA)", example = "BIZCOCHO")
     private TipoIngrediente tipoIngrediente;
+
+    @Schema(description = "Costo por gramo en pesos colombianos", example = "0.05")
     private float costoPorGramo;
+
+    @Schema(description = "Indica si el ingrediente está activo en el catálogo", example = "true")
     private boolean estado;
 
     public Long getId() {

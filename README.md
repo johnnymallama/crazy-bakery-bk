@@ -61,6 +61,28 @@ RecetaService → Vista BD `ingredientes_costos` + variables de entorno (mano de
 
 ---
 
+## Documentación de la API (Swagger UI)
+
+La API cuenta con documentación interactiva generada con **SpringDoc OpenAPI 3**.
+
+### Producción
+
+| Recurso | URL |
+|---|---|
+| Swagger UI | `https://crazy-bakery-bk-835393530868.us-central1.run.app/swagger-ui/index.html` |
+| OpenAPI JSON | `https://crazy-bakery-bk-835393530868.us-central1.run.app/v3/api-docs` |
+
+> **Nota:** Todos los endpoints requieren autenticación con token **Bearer JWT de Firebase**. En Swagger UI usa el botón **Authorize** e ingresa el token con el prefijo `Bearer <tu-token>`.
+
+### Local (perfil dev)
+
+| Recurso | URL |
+|---|---|
+| Swagger UI | `http://localhost:8080/swagger-ui/index.html` |
+| OpenAPI JSON | `http://localhost:8080/v3/api-docs` |
+
+---
+
 ## Controladores
 
 | Controlador | Ruta base | Endpoints principales |
