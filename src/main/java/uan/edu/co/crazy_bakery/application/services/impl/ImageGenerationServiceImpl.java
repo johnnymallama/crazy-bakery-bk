@@ -9,24 +9,28 @@ import uan.edu.co.crazy_bakery.application.dto.requests.CustomCakeImageRequestDT
 import uan.edu.co.crazy_bakery.application.dto.requests.IngredientDetailDTO;
 import uan.edu.co.crazy_bakery.application.dto.responses.GeneratedImageResponseDTO;
 import uan.edu.co.crazy_bakery.application.services.ImageGenerationService;
+import uan.edu.co.crazy_bakery.application.services.storage.StorageService;
 
-import java.util.Optional;
+import java.io.IOException;
+import java.util.Base64;
 import java.util.stream.Collectors;
 
 @Service
 public class ImageGenerationServiceImpl implements ImageGenerationService {
 
     private final ImageModel imageModel;
+    private final StorageService storageService;
 
-    public ImageGenerationServiceImpl(ImageModel imageModel) {
+    public ImageGenerationServiceImpl(ImageModel imageModel, StorageService storageService) {
         this.imageModel = imageModel;
+        this.storageService = storageService;
     }
 
     @Override
     public String generateImage(String prompt) {
         ImagePrompt imagePrompt = new ImagePrompt(prompt);
         ImageResponse imageResponse = imageModel.call(imagePrompt);
-        return resolveImageContent(imageResponse);
+        return uploadToTemp(imageResponse);
     }
 
     @Override
@@ -46,15 +50,19 @@ public class ImageGenerationServiceImpl implements ImageGenerationService {
 
         ImagePrompt imagePrompt = new ImagePrompt(finalPrompt);
         ImageResponse imageResponse = imageModel.call(imagePrompt);
+        String firebaseUrl = uploadToTemp(imageResponse);
 
-        String imageUrl = resolveImageContent(imageResponse);
-
-        return new GeneratedImageResponseDTO(finalPrompt, imageUrl);
+        return new GeneratedImageResponseDTO(finalPrompt, firebaseUrl);
     }
 
-    private String resolveImageContent(ImageResponse imageResponse) {
+    private String uploadToTemp(ImageResponse imageResponse) {
         Image image = imageResponse.getResult().getOutput();
-        return Optional.ofNullable(image.getUrl())
-                .orElseGet(image::getB64Json);
+        byte[] imageBytes = Base64.getDecoder().decode(image.getB64Json());
+        String fileName = "temp/imagen-" + System.currentTimeMillis() + ".jpg";
+        try {
+            return storageService.uploadBytes(imageBytes, fileName, "image/jpeg");
+        } catch (IOException e) {
+            throw new RuntimeException("Error al subir imagen temporal a Firebase Storage", e);
+        }
     }
 }

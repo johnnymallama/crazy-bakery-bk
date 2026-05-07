@@ -17,7 +17,7 @@ import uan.edu.co.crazy_bakery.application.dto.responses.GeneratedImageResponseD
 import uan.edu.co.crazy_bakery.application.services.ImageGenerationService;
 
 
-@Tag(name = "Generación de imágenes", description = "Generación de imágenes de tortas con IA (DALL-E 3)")
+@Tag(name = "Generación de imágenes", description = "Generación de imágenes de tortas con IA (GPT Image 1.5)")
 @RestController
 @RequestMapping("/generate-image")
 public class ImageGenerationController {
@@ -28,7 +28,7 @@ public class ImageGenerationController {
         this.imageGenerationService = imageGenerationService;
     }
 
-    @Operation(summary = "Generar imagen desde prompt", description = "Genera una imagen a partir de un prompt libre usando DALL-E 3 y la almacena en Firebase Storage")
+    @Operation(summary = "Generar imagen desde prompt", description = "Genera una imagen a partir de un prompt libre usando GPT Image 1.5 y la almacena en Firebase Storage")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Imagen generada exitosamente, retorna la URL pública"),
         @ApiResponse(responseCode = "400", description = "El prompt está vacío o es inválido")

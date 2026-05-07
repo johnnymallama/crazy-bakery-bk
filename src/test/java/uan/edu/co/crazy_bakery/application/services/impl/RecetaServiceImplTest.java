@@ -68,8 +68,8 @@ class RecetaServiceImplTest {
     @Test
     void crearReceta_ShouldReturnRecetaDTOConUrlDeFirebase() throws IOException {
         long tortaId = 1L;
-        String originalUrl = "http://example.com/cake.png";
-        String firebaseUrl = "http://firebase-storage.com/receta-123.jpg";
+        String originalUrl = "https://firebasestorage.googleapis.com/v0/b/bucket/o/temp%2Fimagen-123.jpg?alt=media";
+        String firebaseUrl = "https://firebasestorage.googleapis.com/v0/b/bucket/o/permanente%2Freceta-123.jpg?alt=media";
 
         CrearRecetaDTO crearRecetaDTO = new CrearRecetaDTO();
         crearRecetaDTO.setTortaId(tortaId);
@@ -112,7 +112,7 @@ class RecetaServiceImplTest {
 
         when(tortaRepository.findById(tortaId)).thenReturn(Optional.of(torta));
         when(recetaMapper.crearRecetaDTOToReceta(crearRecetaDTO, torta)).thenReturn(receta);
-        when(storageService.uploadFileFromUrl(eq(originalUrl), anyString())).thenReturn(firebaseUrl);
+        when(storageService.moveFile(eq("temp/imagen-123.jpg"), anyString())).thenReturn(firebaseUrl);
         when(recetaRepository.save(any(Receta.class))).thenReturn(recetaGuardada);
         when(recetaMapper.recetaToRecetaDTO(recetaGuardada)).thenReturn(expectedDto);
 
@@ -127,7 +127,7 @@ class RecetaServiceImplTest {
         assertThat(receta.getCostoOperativo()).isEqualTo(15.0f);
 
         verify(tortaRepository, times(1)).findById(tortaId);
-        verify(storageService, times(1)).uploadFileFromUrl(eq(originalUrl), anyString());
+        verify(storageService, times(1)).moveFile(eq("temp/imagen-123.jpg"), anyString());
         verify(recetaRepository, times(1)).save(any(Receta.class));
         verify(recetaMapper, times(1)).crearRecetaDTOToReceta(crearRecetaDTO, torta);
         verify(recetaMapper, times(1)).recetaToRecetaDTO(recetaGuardada);
@@ -148,7 +148,7 @@ class RecetaServiceImplTest {
     @Test
     void crearReceta_ShouldThrowRuntimeExceptionCuandoStorageFalla() throws IOException {
         long tortaId = 1L;
-        String originalUrl = "http://example.com/cake.png";
+        String originalUrl = "https://firebasestorage.googleapis.com/v0/b/bucket/o/temp%2Fimagen-999.jpg?alt=media";
 
         CrearRecetaDTO crearRecetaDTO = new CrearRecetaDTO();
         crearRecetaDTO.setTortaId(tortaId);
@@ -169,11 +169,11 @@ class RecetaServiceImplTest {
 
         when(tortaRepository.findById(tortaId)).thenReturn(Optional.of(torta));
         when(recetaMapper.crearRecetaDTOToReceta(crearRecetaDTO, torta)).thenReturn(receta);
-        when(storageService.uploadFileFromUrl(anyString(), anyString())).thenThrow(new IOException("Error de red"));
+        when(storageService.moveFile(anyString(), anyString())).thenThrow(new IOException("Error de red"));
 
         assertThatThrownBy(() -> recetaService.crearReceta(crearRecetaDTO))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessage("Error al procesar la imagen de la receta");
+                .hasMessage("Error al mover la imagen al almacenamiento permanente");
     }
 
     @Test

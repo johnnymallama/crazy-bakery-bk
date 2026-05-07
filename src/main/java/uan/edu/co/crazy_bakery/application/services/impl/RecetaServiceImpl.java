@@ -14,6 +14,8 @@ import uan.edu.co.crazy_bakery.infrastructure.repositories.RecetaRepository;
 import uan.edu.co.crazy_bakery.infrastructure.repositories.TortaRepository;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Service
@@ -52,15 +54,14 @@ public class RecetaServiceImpl implements RecetaService {
         // Step: calcular costo
         calcularCosto(torta, receta);
 
-        // --- START: IMAGE UPLOAD LOGIC ---
         try {
-            String fileName = "receta-" + System.currentTimeMillis() + ".jpg";
-            String firebaseUrl = storageService.uploadFileFromUrl(crearRecetaDTO.getImagenUrl(), fileName);
+            String sourceFileName = extractFileNameFromFirebaseUrl(crearRecetaDTO.getImagenUrl());
+            String destFileName = "permanente/receta-" + System.currentTimeMillis() + ".jpg";
+            String firebaseUrl = storageService.moveFile(sourceFileName, destFileName);
             receta.setImagenUrl(firebaseUrl);
         } catch (IOException e) {
-            throw new RuntimeException("Error al procesar la imagen de la receta", e);
+            throw new RuntimeException("Error al mover la imagen al almacenamiento permanente", e);
         }
-        // --- END: IMAGE UPLOAD LOGIC ---
 
         // Step: establece estado en true
         receta.setEstado(true);
@@ -82,6 +83,15 @@ public class RecetaServiceImpl implements RecetaService {
     @Override
     public List<String> getUltimasImagenes() {
         return recetaRepository.findUltimasImagenes();
+    }
+
+    private String extractFileNameFromFirebaseUrl(String firebaseUrl) {
+        // URL format: https://firebasestorage.googleapis.com/v0/b/{bucket}/o/{encodedFileName}?alt=media
+        String path = firebaseUrl.substring(firebaseUrl.indexOf("/o/") + 3);
+        if (path.contains("?")) {
+            path = path.substring(0, path.indexOf("?"));
+        }
+        return URLDecoder.decode(path, StandardCharsets.UTF_8);
     }
 
     private void calcularCosto(Torta torta, Receta receta) {
