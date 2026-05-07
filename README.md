@@ -1,6 +1,6 @@
 # Crazy Bakery — Backend API
 
-API REST para el sistema de gestión de una panadería/pastelería, construida con Java 21 y Spring Boot 3. Permite administrar tortas personalizadas, recetas, órdenes, ingredientes y usuarios, con generación automática de imágenes mediante OpenAI DALL-E 3 y almacenamiento en Firebase Storage.
+API REST para el sistema de gestión de una panadería/pastelería, construida con Java 21 y Spring Boot 3. Permite administrar tortas personalizadas, recetas, órdenes, ingredientes y usuarios, con generación automática de imágenes mediante OpenAI GPT Image 1.5 y almacenamiento en Firebase Storage.
 
 ---
 
@@ -9,14 +9,14 @@ API REST para el sistema de gestión de una panadería/pastelería, construida c
 | Categoría | Tecnología |
 |---|---|
 | Lenguaje | Java 21 |
-| Framework | Spring Boot 3.5.9 |
+| Framework | Spring Boot 3.5.14 |
 | Base de datos (producción) | MySQL (Cloud SQL) |
 | Base de datos (desarrollo) | H2 in-memory |
 | Migraciones | Flyway (esquema aplicado manualmente) |
 | Mapeo de objetos | MapStruct |
 | Seguridad | Firebase Authentication (JWT) |
 | Almacenamiento de imágenes | Firebase Storage |
-| Generación de imágenes | OpenAI DALL-E 3 |
+| Generación de imágenes | OpenAI GPT Image 1.5 |
 | Contenerización | Docker + Jib (sin daemon local) |
 | Despliegue | Google Cloud Run |
 | Registro de imágenes | Google Artifact Registry |
@@ -51,7 +51,8 @@ Controller → Service → Repository / Cliente externo → DTO (MapStruct) → 
 
 **Flujo de generación de imágenes:**
 ```
-ImageGenerationController → ImagenService → OpenAI (DALL-E 3) → Firebase Storage → URL pública
+ImageGenerationController → ImagenService → OpenAI (GPT Image 1.5) → Firebase Storage (temp/) → URL pública
+RecetaService → moveFile(temp/ → permanente/) → URL permanente en Firebase Storage
 ```
 
 **Cálculo de costos:**
