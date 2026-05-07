@@ -17,6 +17,7 @@ API REST para el sistema de gestión de una panadería/pastelería, construida c
 | Seguridad | Firebase Authentication (JWT) |
 | Almacenamiento de imágenes | Firebase Storage |
 | Generación de imágenes | OpenAI GPT Image 1.5 |
+| Análisis de reportes (IA) | OpenAI GPT-5.4 Mini |
 | Contenerización | Docker + Jib (sin daemon local) |
 | Despliegue | Google Cloud Run |
 | Registro de imágenes | Google Artifact Registry |
@@ -164,7 +165,7 @@ mvn test
 
 | Variable | Descripción |
 |---|---|
-| `OPENAI_API_KEY` | Clave de API de OpenAI para generación de imágenes |
+| `OPENAI_API_KEY` | Clave de API de OpenAI para generación de imágenes (GPT Image 1.5) y análisis de reportes (GPT-5.4 Mini) |
 | `GOOGLE_APPLICATION_CREDENTIALS` | En Cloud Run no se usa esta variable — las credenciales se aplican automáticamente vía la cuenta de servicio asignada al servicio |
 | `SPRING_DATASOURCE_USERNAME` | Usuario de MySQL |
 | `SPRING_DATASOURCE_PASSWORD` | Contraseña de MySQL |
