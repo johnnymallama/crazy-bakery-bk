@@ -34,3 +34,6 @@ build/
 
 ### CREDENTIALS ###
 credentials/
+
+### LOADTEST ###
+loadtests/results

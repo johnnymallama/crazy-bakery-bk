@@ -208,6 +208,49 @@ Desde la consola de Google Cloud, crear o actualizar el servicio con:
 
 ---
 
+## Pruebas de carga (k6)
+
+El directorio `loadtests/` contiene el suite completo de pruebas de carga k6 diseñado para validar el **Anexo de Capacity y Hardware Sizing** del proyecto de grado. Las pruebas se ejecutan directamente contra el servicio en producción (Google Cloud Run).
+
+### Escenarios implementados
+
+| Escenario | VUs | Duración | SLA | Resultado |
+|---|---|---|---|---|
+| Smoke Test | 1 | ~1 min | p95 < 3 s | ✅ APROBADO |
+| Base | 10 | ~11 min | p95 < 3 s | ✅ APROBADO |
+| Headroom 25% | 14 | ~13 min | p95 < 3 s | ✅ APROBADO |
+| Pico estacional | 25–30 | ~9 min | p95 < 5 s | ✅ APROBADO |
+| Base IA (generación imágenes) | 10 | ~5 min | p95 < 30 s | ⚠️ LIMITACIÓN OPENAI RPM |
+| Pico IA (generación imágenes) | 25–30 | ~5 min | p95 < 45 s | Pendiente |
+
+La alta tasa de error en el escenario Base IA (88%) no es un problema de infraestructura — Cloud Run respondió correctamente en todos los casos. El cuello de botella es el **rate limiting de la cuenta OpenAI** del ambiente de pruebas, confirmando la predicción del documento de Capacity Sizing (págs. 7–8). Las peticiones que OpenAI procesó exitosamente tuvieron latencia dentro del SLA (avg ~18.3 s, p95 ~16 s < 30 s).
+
+### Ejecutar pruebas
+
+```bash
+cd loadtests
+
+# Smoke test (sin costo, ~1 min)
+./run-smoke.sh
+
+# Escenarios estándar (requiere token Firebase)
+export FIREBASE_TOKEN="eyJhbGci..."
+./run-base.sh
+./run-headroom.sh
+./run-pico.sh
+
+# Escenarios IA (costo OpenAI ~USD 0.40–1.20 por ejecución)
+./run-ia-base.sh
+./run-ia-pico.sh
+
+# Generar reporte HTML desde cualquier resultado
+node generate-report.js results/<archivo>_summary.json
+```
+
+Ver `loadtests/README.md` para documentación completa, estructura de archivos y análisis de resultados.
+
+---
+
 ## Esquema de base de datos
 
 El esquema inicial se encuentra en `script_db/V1__create_tables.sql`. Flyway está presente pero deshabilitado; los cambios se aplican manualmente. En producción, Hibernate opera en modo `validate` (sin modificaciones automáticas al esquema).

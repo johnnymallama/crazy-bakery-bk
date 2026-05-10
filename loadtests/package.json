@@ -1,0 +1,16 @@
+{
+  "name": "crazy-bakery-loadtests",
+  "version": "1.0.0",
+  "description": "Pruebas de carga k6 para Crazy Bakery Backend en Cloud Run",
+  "scripts": {
+    "smoke": "k6 run scripts/smoke-test.js -e BASE_URL=$BASE_URL -e FIREBASE_TOKEN=$FIREBASE_TOKEN",
+    "base": "k6 run scripts/escenario-base.js -e BASE_URL=$BASE_URL -e FIREBASE_TOKEN=$FIREBASE_TOKEN --out json=results/escenario-base.json",
+    "headroom": "k6 run scripts/escenario-headroom.js -e BASE_URL=$BASE_URL -e FIREBASE_TOKEN=$FIREBASE_TOKEN --out json=results/escenario-headroom.json",
+    "pico": "k6 run scripts/escenario-pico.js -e BASE_URL=$BASE_URL -e FIREBASE_TOKEN=$FIREBASE_TOKEN --out json=results/escenario-pico.json",
+    "all": "npm run smoke && npm run base && npm run headroom && npm run pico"
+  },
+  "keywords": ["k6", "load-testing", "cloud-run", "spring-boot"],
+  "engines": {
+    "k6": ">=0.50.0"
+  }
+}
